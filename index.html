@@ -97,10 +97,14 @@
     .alerts-list li{padding:8px;border-radius:8px;background:#fff;margin-bottom:8px;border:1px solid #f1f5f9}
     .alerts-severity-low{color:#b91c1c;font-weight:700}
 
-    /* Detail View Badges */
+    /* Detail View Badges & Interactive Buttons */
     .status-badge { font-weight:700; padding:4px 8px; border-radius:6px; font-size:12px; display:inline-block; }
     .status-badge.p { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
     .status-badge.a { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+    .status-btn { border-radius:6px; padding:6px 10px; border:none; cursor:pointer; width: 100%; font-weight:700; transition: all 0.2s; }
+    .status-btn.p { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+    .status-btn.a { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+    .status-btn:hover { opacity: 0.9; transform: scale(1.02); }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -184,30 +188,16 @@
         </div>
 
         <div id="dailyStatusPanel" class="panel">
-          <h3 class="panel-title">Today's Attendance Status</h3>
+          <h3 class="panel-title">Top 5 Present & Absent Students</h3>
           <div id="dailyStatusWrap" style="max-height:220px;overflow:auto;margin-top:8px">
             <table style="width:100%;border-collapse:collapse;font-size:13px">
               <thead>
                 <tr>
                   <th>Roll</th>
                   <th>Name</th>
-                  <th style="text-align:right">Status</th>
                 </tr>
               </thead>
               <tbody id="dailyStatusBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="detailsViewPanel" class="panel" style="display:none;">
-          <h3 class="panel-title" id="detailsViewTitle">Selected Record Details</h3>
-          <button id="closeDetailsBtn" class="secondary" style="margin-bottom:8px;font-size:12px">Close Details</button>
-          <div id="detailsViewWrap" style="max-height:260px;overflow:auto;margin-top:6px">
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
-              <thead>
-                <tr><th>Roll</th><th>Name</th><th style="text-align:right">Status</th></tr>
-              </thead>
-              <tbody id="detailsViewBody"></tbody>
             </table>
           </div>
         </div>
@@ -318,14 +308,25 @@
     <div class="att-modal" role="dialog" aria-modal="true" aria-labelledby="attModalTitle">
       <div class="att-modal-header">
         <div>
-          <div id="attModalTitle" class="att-modal-title">Attendance</div>
-          <div id="attModalSubtitle" class="att-modal-sub">Details</div>
+          <div id="attModalTitle" class="att-modal-title">Attendance Details</div>
+          <div id="attModalSubtitle" class="att-modal-sub">Click a button to toggle Present/Absent</div>
         </div>
         <div>
           <button id="attModalCloseBtn" class="att-modal-close">Close</button>
         </div>
       </div>
-      <div id="attModalContent" class="att-modal-list"></div>
+      <div id="attModalContent" class="att-modal-list">
+        <table>
+            <thead>
+                <tr><th>Roll</th><th>Name</th><th style="text-align:right">Status</th></tr>
+            </thead>
+            <tbody id="detailsViewBody">
+                </tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px; text-align:right; border-top:1px solid #f1f5f9; padding-top:12px;">
+         <button id="saveDetailsBtn" style="background:#0f9d58; color:white; padding:8px 16px; font-weight:600;">Save Changes</button>
+      </div>
     </div>
   </div>
 
@@ -339,6 +340,10 @@
     (function(){
       // state
       let currentUser = null, currentRole = null, currentList = [], attendanceState = {}, records = [], students = [], faculty = [], lectures = [], studentsPieChart = null, trendChart = null, isEditing = false, currentEditRecordId = null, scanLog = [];
+      
+      // Interactive View Modal State
+      let viewPanelState = {}; 
+      window.lastViewedRecord = null;
 
       // DOM refs
       const loginScreen = document.getElementById("loginScreen");
@@ -376,13 +381,15 @@
       const studentsStatsText = document.getElementById("studentsStatsText");
       const scanLogTbody = document.querySelector("#scanLogTable tbody");
 
-      // NEW DETAIL PANEL REFS
-      const detailsViewPanel = document.getElementById('detailsViewPanel');
-      const detailsViewTitle = document.getElementById('detailsViewTitle');
+      // MODAL REFS
+      const attModalBackdrop = document.getElementById('attModalBackdrop');
       const detailsViewBody = document.getElementById('detailsViewBody');
-      const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+      const attModalCloseBtn = document.getElementById('attModalCloseBtn');
+      const attModalTitle = document.getElementById('attModalTitle');
+      const attModalSubtitle = document.getElementById('attModalSubtitle');
+      const saveDetailsBtn = document.getElementById('saveDetailsBtn');
 
-      // visual containers & new items
+      // visual containers
       const heatmapEl = document.getElementById("heatmap");
       const heatbarList = document.getElementById("heatbarList");
       const timelineEl = document.getElementById("timeline");
@@ -427,10 +434,10 @@
         scanInput.addEventListener("keydown", e => { if(e.key==="Enter"){ const code=scanInput.value.trim(); scanInput.value=""; handleScan(code); }});
         lectureSelect.addEventListener("change", updateTimeFromLecture);
         
-        // Close detail panel
-        closeDetailsBtn.addEventListener('click', () => {
-            detailsViewPanel.style.display = 'none';
-        });
+        // Modal Event Listeners
+        attModalCloseBtn.addEventListener('click', closeAttendanceModal);
+        attModalBackdrop.addEventListener('click', function(e){ if(e.target===this) closeAttendanceModal(); });
+        saveDetailsBtn.addEventListener('click', saveDetailsChanges);
 
         if(pwdToggleBtn){
           if(!pwdToggleBtn.innerHTML.trim()) pwdToggleBtn.innerHTML = eyeIcon;
@@ -439,9 +446,6 @@
           pwdToggleBtn.addEventListener('click', ()=>{ togglePassword(); });
           pwdToggleBtn.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePassword(); }});
         }
-
-        document.getElementById('attModalCloseBtn').addEventListener('click', closeAttendanceModal);
-        document.getElementById('attModalBackdrop').addEventListener('click', function(e){ if(e.target===this) closeAttendanceModal(); });
 
         attendanceDate.value = new Date().toISOString().slice(0,10);
 
@@ -581,6 +585,7 @@
           const rollKey = String(item.roll);
           chk.checked = !!(attendanceState[rollKey] && attendanceState[rollKey].present); 
           chk.disabled = !canEdit;
+          
           chk.addEventListener("change", e=>{ 
             if(attendanceState[rollKey]) {
                 attendanceState[rollKey].present = e.target.checked; 
@@ -623,7 +628,7 @@
         
         const attendees = currentList.map(p=>{
             const rollKey = String(p.roll);
-            const isPresent = attendanceState[rollKey] && attendanceState[rollKey].present;
+            const isPresent = attendanceState[rollKey] && attendanceState[rollKey].present === true;
             return { roll: p.roll, name: p.name, status: isPresent ? "P" : "A" };
         });
         
@@ -651,6 +656,7 @@
           if(detailsError) throw detailsError;
 
           showAlert("✅ Attendance saved successfully!");
+          
           await loadAttendanceRecords();
           exitEditMode(true);
           updateSummary(); renderAllCharts(); renderHeatmap();
@@ -666,41 +672,44 @@
       function enterEditMode(recordId, record){
         isEditing = true; 
         currentEditRecordId = recordId; 
+        
         submitBtn.textContent = "Update Attendance"; 
         cancelEditBtn.style.display = "inline-flex";
         
-        // 1. Set form fields
         attendanceDate.value = record.date; 
         lectureSelect.value = record.lecture; 
         lectureTypeSelect.value = record.lectureType || "Regular"; 
         daySelect.value = record.day || "Monday"; 
-        facultySelect.value = record.faculty || (faculty[0] && faculty[0].name);
+        
+        if(record.faculty) facultySelect.value = record.faculty;
+        
         isProxy.checked = !!record.proxy; 
         proxyDetails.style.display = isProxy.checked ? "block" : "none"; 
-        originalFaculty.value = record.original || facultySelect.value;
-        let st = record.startTime || ""; let en = record.endTime || "";
-        if((!st || !en) && record.timeSlot){ const parts = record.timeSlot.split(" to "); st = parts[0]||""; en = parts[1]||""; }
+        if(record.original) originalFaculty.value = record.original;
+
+        let st = record.startTime || ""; 
+        let en = record.endTime || "";
+        if((!st || !en) && record.timeSlot){ 
+            const parts = record.timeSlot.split(" to "); 
+            st = parts[0]||""; en = parts[1]||""; 
+        }
         startTimeInput.value = st; 
         endTimeInput.value = en;
         
-        // 2. IMPORTANT: Force list type to Student and RESET Filter
         userTypeSel.value = "student"; 
         sortSelect.value = ""; 
+        searchBox.value = ""; 
 
-        // 3. Reset the current list based on ALL students
         currentList = (students || []).map(x => ({...x})); 
-        
-        // 4. Initialize attendanceState for EVERY student
         attendanceState = {};
         currentList.forEach(p => {
             attendanceState[String(p.roll)] = { present: false };
         });
 
-        // 5. Mark Present students from the record
         if(record.attendees && record.attendees.length > 0){
             record.attendees.forEach(a => {
-                if(a.status === 'P'){
-                    const key = String(a.roll);
+                if(a.status === 'P' || a.status === 'Present'){
+                    const key = String(a.roll); 
                     if(attendanceState[key]){
                         attendanceState[key].present = true;
                     }
@@ -708,10 +717,9 @@
             });
         }
         
-        // 6. Render the list with the ticked boxes
+        document.getElementById('userListPanel').style.display = 'block';
+        document.getElementById('lecturePanel').style.display = 'block';
         renderList();
-        
-        // Scroll to top
         document.querySelector('.left').scrollIntoView({ behavior: 'smooth' });
         showAlert("Editing: " + record.lecture);
       }
@@ -727,7 +735,7 @@
 
         records.forEach((r)=>{
           const tr = document.createElement("tr");
-          // Replaced Present button with just View button that triggers new panel
+          // Interactive View
           const viewBtn = `<button class="record-action view" type="button" aria-label="View Details">View</button>`;
           
           const editHtml = canEdit ? `<button class="record-action edit" type="button" aria-label="Edit record">Edit</button>` : `<span style="display:inline-block;padding:6px 8px;border-radius:8px;color:#9ca3af">-</span>`;
@@ -773,42 +781,127 @@
         }catch(err){ console.error(err); showAlert("❌ Error deleting record"); }
       }
 
-      // NEW FUNCTION TO SHOW DETAILS IN THE NEW PANEL
-      function viewRecordDetails(record){
-          detailsViewTitle.textContent = `${record.lecture} (${record.date})`;
-          detailsViewBody.innerHTML = "";
-          
-          // Safety sort: P first, deduplicate
-          let uniqueAttendees = [];
-          const seen = new Set();
-          const sorted = (record.attendees||[]).slice().sort((a,b) => (a.status==='P' ? -1 : 1));
-          
-          sorted.forEach(a=>{
-             const k = String(a.roll);
-             if(!seen.has(k)){ seen.add(k); uniqueAttendees.push(a); }
-          });
-          
-          // Sort by Roll for display
-          uniqueAttendees.sort((a,b)=> a.roll - b.roll);
+      // --- NEW INTERACTIVE VIEW LOGIC ---
 
-          uniqueAttendees.forEach(a=>{
+      function viewRecordDetails(record){
+          window.lastViewedRecord = record; // Save reference
+          attModalTitle.textContent = `${record.lecture} (${record.date})`;
+          attModalSubtitle.textContent = `${record.faculty}`;
+          
+          // 1. Initialize local state for the modal
+          viewPanelState = {};
+          
+          // Map existing attendees status
+          (record.attendees||[]).forEach(a=>{
+              const roll = String(a.roll);
+              viewPanelState[roll] = String(a.status||"A").toUpperCase();
+          });
+
+          // Ensure every student in the system has a status (default Absent if missing)
+          students.forEach(s => {
+              const k = String(s.roll);
+              if(!viewPanelState[k]) viewPanelState[k] = "A";
+          });
+
+          renderViewModalTable();
+          attModalBackdrop.style.display = 'flex';
+      }
+
+      function renderViewModalTable(){
+          detailsViewBody.innerHTML = "";
+          // Create list combining student info + current state
+          const list = students.map(s => {
+              const k = String(s.roll);
+              return { roll: s.roll, name: s.name, status: viewPanelState[k] };
+          });
+
+          // Sort: P first, then by Roll
+          list.sort((a,b) => {
+              if(a.status === b.status) return a.roll - b.roll;
+              return a.status === 'P' ? -1 : 1;
+          });
+
+          list.forEach(item => {
               const tr = document.createElement('tr');
-              const badgeClass = a.status==='P' ? 'status-badge p' : 'status-badge a';
-              const statusText = a.status==='P' ? 'Present' : 'Absent';
+              const isP = item.status === 'P';
+              const btnClass = isP ? 'status-btn p' : 'status-btn a';
+              const btnText = isP ? 'Present' : 'Absent';
+              
               tr.innerHTML = `
-                <td>${a.roll}</td>
-                <td>${a.name}</td>
-                <td style="text-align:right"><span class="${badgeClass}">${statusText}</span></td>
+                  <td>${item.roll}</td>
+                  <td>${item.name}</td>
+                  <td style="width:100px;">
+                      <button class="${btnClass}" onclick="window.toggleViewStatus(${item.roll})">${btnText}</button>
+                  </td>
               `;
               detailsViewBody.appendChild(tr);
           });
-          
-          detailsViewPanel.style.display = 'block';
-          // scroll to panel
-          detailsViewPanel.scrollIntoView({ behavior: 'smooth' });
       }
 
-      function closeAttendanceModal(){ const b = document.getElementById('attModalBackdrop'); b.style.display='none'; b.setAttribute('aria-hidden','true'); }
+      // Exposed globally so onclick works
+      window.toggleViewStatus = function(roll){
+          const key = String(roll);
+          viewPanelState[key] = viewPanelState[key] === "P" ? "A" : "P";
+          renderViewModalTable(); // Re-render to update colors/sort
+      }
+
+      async function saveDetailsChanges(){
+          if(!window.lastViewedRecord || !window.lastViewedRecord.id) return;
+          const recordId = window.lastViewedRecord.id;
+          saveDetailsBtn.textContent = "Saving...";
+          saveDetailsBtn.disabled = true;
+
+          try {
+              // 1. Prepare Data
+              const attendees = students.map(s => {
+                  const st = viewPanelState[String(s.roll)] === 'P' ? 'P' : 'A';
+                  return { student_roll: s.roll, student_name: s.name, status: st };
+              });
+              
+              const presentCount = attendees.filter(a => a.status === 'P').length;
+              const totalCount = attendees.length;
+
+              // 2. Delete old details
+              const { error: delErr } = await supabase.from("attendance_details").delete().eq("attendance_record_id", recordId);
+              if(delErr) throw delErr;
+
+              // 3. Insert new details
+              const toInsert = attendees.map(a => ({
+                  attendance_record_id: recordId,
+                  student_roll: a.student_roll,
+                  student_name: a.student_name,
+                  status: a.status
+              }));
+              const { error: insErr } = await supabase.from("attendance_details").insert(toInsert);
+              if(insErr) throw insErr;
+
+              // 4. Update parent record counts
+              const { error: updErr } = await supabase.from("attendance_records").update({
+                  present_count: presentCount, 
+                  total_count: totalCount 
+              }).eq("id", recordId);
+              if(updErr) throw updErr;
+
+              showAlert("Changes saved successfully!");
+              closeAttendanceModal();
+              await loadAttendanceRecords(); // Refresh dashboard
+              renderAllCharts();
+              renderHeatmap();
+
+          } catch(e){
+              console.error(e);
+              showAlert("Error saving changes: " + e.message);
+          } finally {
+              saveDetailsBtn.textContent = "Save Changes";
+              saveDetailsBtn.disabled = false;
+          }
+      }
+
+      function closeAttendanceModal(){ 
+          attModalBackdrop.style.display='none'; 
+      }
+
+      // --- END NEW LOGIC ---
 
       async function clearAllRecords(){
         if(currentRole!=="admin"){ showAlert("Only Admin can delete all records"); return; }
@@ -846,6 +939,7 @@
         renderTimeline();
         renderOverviewAndTrend();
         renderDailyPercent();
+        renderTopStudents(); // Added call here
       }
 
       function renderDailyPercent(){
@@ -1069,32 +1163,48 @@
         }
       }
 
-      function renderDailyStatus(){
+      function renderTopStudents(){
         const tbody = dailyStatusBody;
         if(!tbody) return;
-        const today = attendanceDate.value || new Date().toISOString().slice(0,10);
-        const presentSet = new Set();
         
-        records.filter(r=>r.date===today).forEach(r=>{
-          (r.attendees||[]).forEach(a=>{
-            if(a.status==='P') presentSet.add(a.roll);
-          });
+        // Calculate totals based on ALL records
+        const studentStats = students.map(s => {
+           let presentCount = 0;
+           records.forEach(r => {
+               const attendee = (r.attendees || []).find(a => String(a.roll || a.student_roll) === String(s.roll));
+               if (attendee && (attendee.status === 'P' || attendee.status === 'Present')) {
+                   presentCount++;
+               }
+           });
+           return { ...s, count: presentCount };
         });
-        
-        const rows = [];
-        students.forEach(s=>{
-          if(presentSet.has(s.roll)) rows.push({roll:s.roll,name:s.name,status:"Present"});
+
+        // Sort descending for Present
+        const topPresent = [...studentStats].sort((a,b) => b.count - a.count).slice(0, 5);
+        // Sort ascending for Absent
+        const topAbsent = [...studentStats].sort((a,b) => a.count - b.count).slice(0, 5);
+
+        tbody.innerHTML = "";
+
+        // Section 1 Header
+        const rowHeaderP = document.createElement("tr");
+        rowHeaderP.innerHTML = `<td colspan="2" style="background:#ecfdf5;color:#065f46;font-weight:bold;font-size:12px">🏆 Top 5 Present</td>`;
+        tbody.appendChild(rowHeaderP);
+
+        // Section 1 Rows
+        topPresent.forEach(s => {
+           tbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td></tr>`;
         });
-        students.forEach(s=>{
-          if(!presentSet.has(s.roll)) rows.push({roll:s.roll,name:s.name,status:"Absent"});
+
+        // Section 2 Header
+        const rowHeaderA = document.createElement("tr");
+        rowHeaderA.innerHTML = `<td colspan="2" style="background:#fef2f2;color:#991b1b;font-weight:bold;font-size:12px;border-top:2px solid #e5e7eb">⚠️ Top 5 Absent</td>`;
+        tbody.appendChild(rowHeaderA);
+
+        // Section 2 Rows
+        topAbsent.forEach(s => {
+           tbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td></tr>`;
         });
-        tbody.innerHTML = rows.map(r=>`
-          <tr>
-            <td>${r.roll}</td>
-            <td>${r.name}</td>
-            <td style="text-align:right;font-weight:600;color:${r.status==='Present'?'#059669':'#dc2626'}">${r.status}</td>
-          </tr>
-        `).join("");
       }
 
       async function handleScan(code){
@@ -1133,7 +1243,7 @@
 
       function refreshEverything(){
         updateSummary();
-        renderDailyStatus();
+        renderTopStudents();
         renderAllCharts();
         renderHeatmap();
         renderAlerts();
@@ -1145,4 +1255,4 @@
     })();
   </script>
 </body>
-</html> 
+</html>
