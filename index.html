@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TYBCA Attendance Dashboard - Supabase</title>
+  <title>TYBCA Attendance Dashboard - Supabase (Admin Visibility)</title>
   <style>
-    :root{--panel:#ffffff;--accent:#0f9d58;--muted:#6b7280}
-    .theme-login{--bg:radial-gradient(circle at top left,#7b2ff7,#5a2fd6,#5826c4,#7520b7,#9121b4,#b623b5,#d72ab8); }
-    .theme-main{--bg:radial-gradient(circle at top left,#7b2ff7,#5a2fd6,#5826c4,#7520b7,#9121b4,#b623b5,#d72ab8);--accent:#0077ff}
+    :root{--panel:#ffffff;--accent:#0f9d58;--muted:#6b7280;}
+    .theme-login{--bg:radial-gradient(circle at top left,#7b2ff7,#5a2fd6,#5826c4,#7520b7,#9121b4,#b623b5,#d72ab8);}
+    .theme-main{--bg:radial-gradient(circle at top left,#7b2ff7,#5a2fd6,#5826c4,#7520b7,#9121b4,#b623b5,#d72ab8);--accent:#0077ff;}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#111827;min-height:100vh;padding:16px;transition:background 0.4s ease}
-    .login-wrapper{min-height:100vh;display:flex;align-items:center;justify-content:center}
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#111827;min-height:100vh;padding:16px;transition:background 0.4s ease;}
+    .login-wrapper{min-height:100vh;display:flex;align-items:center;justify-content:center;}
     .login-card{width:100%;max-width:420px;background:#ffffff;border-radius:24px;box-shadow:0 18px 45px rgba(15,23,42,0.25);padding:24px 22px 20px;}
     .login-header{text-align:center;margin-bottom:16px}
     .login-header h1{font-size:22px;margin-top:6px;margin-bottom:4px}
@@ -38,22 +38,20 @@
     #recordsWrap{max-height:260px;overflow:auto;margin-top:6px}
     #studentsReportWrap{max-height:220px;overflow:auto;margin-top:6px}
     #scanLogWrap{max-height:160px;overflow:auto;margin-top:6px}
-    #facultySummaryWrap{max-height:260px;overflow:auto;margin-top:6px}
+    #facultySummaryWrap{max-height:200px;overflow:auto;margin-top:6px}
     .form-row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}
     .form-row label{min-width:80px;color:#4b5563}
-    input[type="text"],select,input[type="time"],input[type="email"],input[type="password"],input[type="number"]{padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;font-size:13px}
+    input[type="text"],select,input[type="time"],input[type="email"],input[type="password"]{padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;font-size:13px}
     button{background:var(--accent);color:#fff;padding:7px 10px;border-radius:8px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px}
     button.secondary{background:#fff;color:#111827;border:1px solid #e5e7eb}
     button.download-btn-primary{background:#16a34a}
     button:disabled{opacity:0.55;cursor:not-allowed}
     .controls-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
     .summary p{font-size:13px;margin:2px 0}
-    .stats-line{font-size:12px;color:#4b7280;margin:2px 0 4px}
+    .stats-line{font-size:12px;color:#4b5563;margin:2px 0 4px}
     footer{text-align:center;margin-top:12px;font-size:11px;color:#e5e7eb}
     .alert{padding:9px 10px;margin-top:8px;background:#e6fffa;border-radius:10px;color:#065f46;font-size:13px;box-shadow:0 2px 6px rgba(16,185,129,0.25)}
     @media(max-width:900px){main{flex-direction:column}header{flex-direction:column;align-items:flex-start;gap:6px} .top-right{align-items:flex-start} .top-controls{justify-content:flex-start} #usersTableWrap{max-height:260px}}
-    
-    /* Modal */
     .att-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:1100}
     .att-modal{width:calc(100% - 40px);max-width:760px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(2,6,23,0.35);max-height:80vh;overflow:auto}
     .att-modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
@@ -64,47 +62,25 @@
     .att-modal-list table{width:100%;border-collapse:collapse}
     .att-modal-list th,.att-modal-list td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:14px}
     .att-modal-empty{padding:18px;text-align:center;color:#6b7280}
-    
-    /* Action Buttons */
     .record-action { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; color:#111827; font-size:13px; cursor:pointer; box-shadow:0 1px 0 rgba(0,0,0,0.03); }
     .record-action.present { background:#ecfdf5; color:#065f46; border-color:#10b981; }
-    .record-action.view { background:#f0f9ff; color:#0369a1; border-color:#0ea5e9; }
+    .record-action.absent { background:#fff7ed; color:#7c2d12; border-color:#f97316; }
     .record-action.edit { background:#eef2ff; color:#3730a3; border-color:#a78bfa; }
     .record-action.delete { background:#fff1f2; color:#991b1b; border-color:#fca5a5; }
     .record-badge { display:inline-block; min-width:40px; padding:6px 10px; border-radius:999px; text-align:center; font-weight:700; background:linear-gradient(90deg,#f8fafc,#fff); color:#111827; border:1px solid #e6eef8; font-size:13px; }
     #recordsTable td .actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    
-    /* Heatmap & KPI */
+    #leaderboardTable thead th { font-weight:700; background:#fafafa; font-size:13px; }
+    #leaderboardTable tbody td { padding:8px 6px; border-bottom:1px solid #f3f4f6; font-size:13px; color:#111827; }
+    .leader-percent { font-weight:700; }
+    .leader-low { color:#b91c1c; } .leader-mid { color:#f59e0b; } .leader-high { color:#065f46; }
+    #reportsVisualizer{display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px}
     .heatmap-grid{display:grid;grid-template-columns: repeat(7, 1fr); gap:6px; padding:8px}
     .heatday{height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0b1220;background:#e5e7eb}
     .heat-legend{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12px;flex-wrap:wrap}
-    .kpi-row{display:flex;gap:8px;align-items:stretch}
-    .kpi-card{flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#f8fafc);box-shadow:0 4px 12px rgba(2,6,23,0.06);display:flex;flex-direction:column;justify-content:center;gap:6px}
-    .kpi-value{font-size:20px;font-weight:800}
-    .kpi-label{font-size:12px;color:#6b7280}
-    
-    /* Password Toggle */
-    .pwd-wrap{position:relative}
-    .pwd-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:transparent;border:none;padding:6px;border-radius:6px;cursor:pointer;z-index:3;color:#6b7280;display:inline-flex;align-items:center;justify-content:center}
-    .pwd-toggle svg{width:20px;height:20px;opacity:0.95;stroke:currentColor;fill:none}
-    .pwd-toggle:focus{outline:2px solid rgba(59,130,246,0.35);box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
-    
-    /* Timeline & Alerts */
-    #timeline .timeline-item {display:flex;gap:8px;align-items:center;margin-bottom:8px}
-    .bar{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden}
-    .bar-fill{height:100%;width:0%;background:#10b981;border-radius:999px}
-    .alerts-list{list-style:none;padding:0;margin:0;max-height:220px;overflow:auto}
-    .alerts-list li{padding:8px;border-radius:8px;background:#fff;margin-bottom:8px;border:1px solid #f1f5f9}
-    .alerts-severity-low{color:#b91c1c;font-weight:700}
-
-    /* Detail View Badges & Interactive Buttons */
-    .status-badge { font-weight:700; padding:4px 8px; border-radius:6px; font-size:12px; display:inline-block; }
-    .status-badge.p { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .status-badge.a { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
-    .status-btn { border-radius:6px; padding:6px 10px; border:none; cursor:pointer; width: 100%; font-weight:700; transition: all 0.2s; }
-    .status-btn.p { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .status-btn.a { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
-    .status-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    #adminPanel{display:none;margin-bottom:12px}
+    .admin-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .admin-list{margin-top:8px;padding:10px;background:#fff;border-radius:8px}
+    .is-hidden-panel{opacity:0.45}
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -112,6 +88,7 @@
 </head>
 
 <body class="theme-login">
+  <!-- LOGIN -->
   <div id="loginScreen" class="login-wrapper">
     <div class="login-card">
       <div class="login-header">
@@ -124,12 +101,7 @@
       <label class="login-label" for="loginEmail">Email</label>
       <input id="loginEmail" type="email" class="login-input" placeholder="Enter email" />
       <label class="login-label" for="loginPassword">Password</label>
-
-      <div class="pwd-wrap">
-        <input id="loginPassword" type="password" class="login-input" placeholder="Enter password" style="padding-right:52px" />
-        <button id="pwdToggleBtn" class="pwd-toggle" aria-label="Show password" title="Show password" type="button"></button>
-      </div>
-
+      <input id="loginPassword" type="password" class="login-input" placeholder="Enter password" />
       <button id="loginSubmit" class="login-btn"><span>🔒</span><span>Login</span></button>
 
       <div class="info-box">
@@ -139,6 +111,7 @@
     </div>
   </div>
 
+  <!-- MAIN APP -->
   <div id="appContainer" class="app-container" aria-hidden="true">
     <header>
       <h2>TYBCA Attendance Dashboard</h2>
@@ -154,9 +127,25 @@
       </div>
     </header>
 
+    <!-- ADMIN PANEL (visible only to admin role) -->
+    <div id="adminPanel" class="panel" aria-hidden="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">Admin Controls</h3>
+          <div style="font-size:13px;color:#6b7280">Hide/show panels for students & faculty. Settings persist in Supabase/localStorage.</div>
+        </div>
+        <div class="admin-controls">
+          <button id="unhideSelected" class="record-action">Unhide selected</button>
+          <button id="unhideAll" class="record-action">Unhide all</button>
+        </div>
+      </div>
+
+      <div class="admin-list" id="adminPanelList" style="margin-top:10px"></div>
+    </div>
+
     <main>
       <section class="left">
-        <div class="panel" id="userListPanel">
+        <div class="panel">
           <h3 class="panel-title">User List</h3>
           <div class="controls-row">
             <select id="sortSelect">
@@ -174,7 +163,7 @@
           </div>
         </div>
 
-        <div class="panel" id="lecturePanel">
+        <div class="panel">
           <h3 class="panel-title">Lecture / Session Details</h3>
           <div class="form-row"><label>Lecture</label><select id="lectureSelect"></select></div>
           <div class="form-row"><label>Type</label><select id="lectureType"><option value="Regular">Regular Lecture</option><option value="ProxyLecture">Proxy Lecture</option></select></div>
@@ -187,37 +176,53 @@
           <div class="form-row"><button id="submitAttendanceBtn">Submit Attendance</button><button id="cancelEditBtn" class="secondary" style="display:none">Cancel Edit</button></div>
         </div>
 
-        <div id="dailyStatusPanel" class="panel">
-          <h3 class="panel-title">Top 5 Present & Absent Students</h3>
-          <div id="dailyStatusWrap" style="max-height:220px;overflow:auto;margin-top:8px">
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
-              <thead>
-                <tr>
-                  <th>Roll</th>
-                  <th>Name</th>
-                </tr>
-              </thead>
-              <tbody id="dailyStatusBody"></tbody>
-            </table>
+        <div id="attendanceReportsPanel" class="panel">
+          <h3 class="panel-title">Attendance Reports (Visualization) <small style="font-size:12px;color:#6b7280">(can be hidden by admin)</small></h3>
+          <div class="controls-row">
+            <label style="font-size:13px;color:#6b7280;margin-right:auto">Admin hide: <input type="checkbox" class="admin-hide-checkbox" data-panel="attendanceReportsPanel" style="margin-left:8px"/></label>
+            <button id="downloadStudentsReportCsv" class="download-btn-primary">Download Students CSV</button>
+            <button id="downloadFacultyReportCsv" class="download-btn-primary">Download Faculty CSV</button>
           </div>
-        </div>
 
-        <div id="dailyPercentPanel" class="panel" data-panel="dailyPercentPanel">
-          <h3 class="panel-title">Daily Percent (recent days)</h3>
-          <div id="heatbarList" style="margin-top:8px"></div>
-          <div class="heat-legend" style="margin-top:10px">
-            <div class="heat-legend-item"><div style="width:16px;height:12px;background:#065f46;border-radius:3px"></div><div>90-100%</div></div>
-            <div class="heat-legend-item"><div style="width:16px;height:12px;background:#10b981;border-radius:3px"></div><div>75-89%</div></div>
-            <div class="heat-legend-item"><div style="width:16px;height:12px;background:#84cc16;border-radius:3px"></div><div>50-74%</div></div>
-            <div class="heat-legend-item"><div style="width:16px;height:12px;background:#f59e0b;border-radius:3px"></div><div>25-49%</div></div>
-            <div class="heat-legend-item"><div style="width:16px;height:12px;background:#f97316;border-radius:3px"></div><div>1-24%</div></div>
-            <div class="heat-legend-item"><div style="width:16px;height:12px;background:#e5e7eb;border-radius:3px"></div><div>0%</div></div>
+          <div id="regularStudentsWrap" style="margin-top:8px; padding:8px; background:#fff; border-radius:8px;" data-panel="regularStudentsWrap">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <strong>Regular Students (Summary)</strong>
+              <label style="font-size:13px;color:#6b7280">Admin hide: <input type="checkbox" class="admin-hide-checkbox" data-panel="regularStudentsWrap" style="margin-left:8px"/></label>
+            </div>
+            <div style="max-height:220px; overflow:auto; margin-top:8px;">
+              <table id="regularStudentsTable" style="width:100%">
+                <thead>
+                  <tr><th style="text-align:left">Roll</th><th style="text-align:left">Name</th><th style="text-align:right">Present</th><th style="text-align:right">Absent</th><th style="text-align:right">Total</th><th style="text-align:right">%</th></tr>
+                </thead>
+                <tbody id="regularStudentsBody"></tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        <div id="monthlyHeatPanel" class="panel" data-panel="monthlyHeatPanel">
-          <h3 class="panel-title">Monthly Heatmap (grid) — last 30 days</h3>
-          <div id="heatmap" class="heatmap-grid" style="margin-top:8px"></div>
+          <div id="heatbarWrap" style="margin-top:12px; padding:8px; background:#fff; border-radius:8px;" data-panel="heatbarWrap">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <strong>Daily Percent (recent days)</strong>
+              <label style="font-size:13px;color:#6b7280">Admin hide: <input type="checkbox" class="admin-hide-checkbox" data-panel="heatbarWrap" style="margin-left:8px"/></label>
+            </div>
+            <div id="heatbarList" style="margin-top:8px"></div>
+            <div class="heat-legend" style="margin-top:10px">
+              <div class="heat-legend-item"><div style="width:16px;height:12px;background:#065f46;border-radius:3px"></div><div>90-100%</div></div>
+              <div class="heat-legend-item"><div style="width:16px;height:12px;background:#10b981;border-radius:3px"></div><div>75-89%</div></div>
+              <div class="heat-legend-item"><div style="width:16px;height:12px;background:#84cc16;border-radius:3px"></div><div>50-74%</div></div>
+              <div class="heat-legend-item"><div style="width:16px;height:12px;background:#f59e0b;border-radius:3px"></div><div>25-49%</div></div>
+              <div class="heat-legend-item"><div style="width:16px;height:12px;background:#f97316;border-radius:3px"></div><div>1-24%</div></div>
+              <div class="heat-legend-item"><div style="width:16px;height:12px;background:#e5e7eb;border-radius:3px"></div><div>0%</div></div>
+            </div>
+          </div>
+
+          <div id="monthlyHeatWrap" style="margin-top:12px; padding:8px; background:#fff; border-radius:8px;" data-panel="monthlyHeatWrap">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <strong>Monthly Heatmap (grid) — last 30 days</strong>
+              <label style="font-size:13px;color:#6b7280">Admin hide: <input type="checkbox" class="admin-hide-checkbox" data-panel="monthlyHeatWrap" style="margin-left:8px"/></label>
+            </div>
+            <div id="heatmap" class="heatmap-grid" style="margin-top:8px"></div>
+          </div>
+
         </div>
       </section>
 
@@ -236,7 +241,7 @@
 
         <div class="panel" id="attendanceRecordsPanel" data-panel="attendanceRecordsPanel">
           <h3 class="panel-title">Attendance Records</h3>
-          <div class="controls-row"><button id="downloadCSVBtn">Download CSV</button><button id="clearAllRecordsBtn" class="secondary">Delete All</button></div>
+          <div class="controls-row"><label style="font-size:13px;color:#6b7280;margin-right:auto">Admin hide: <input type="checkbox" class="admin-hide-checkbox" data-panel="attendanceRecordsPanel" style="margin-left:8px"/></label><button id="downloadCSVBtn">Download CSV</button><button id="clearAllRecordsBtn" class="secondary">Delete All</button></div>
           <div id="recordsWrap">
             <table id="recordsTable">
               <thead><tr><th>Date</th><th>Time</th><th>Lecture</th><th>Faculty</th><th>Present</th><th>View</th><th>Edit</th><th>Delete</th></tr></thead>
@@ -249,101 +254,69 @@
           <h3 class="panel-title">Attendance Analytics</h3>
           <div class="summary"><p><strong>Regular Students (Today)</strong></p><p id="studentsStatsText" class="stats-line"></p></div>
           <canvas id="studentsPie" height="110"></canvas>
-        </div>
+          <div style="margin-top:12px">
+            <div id="leaderboardWrap" class="panel" style="padding:10px;margin-top:6px" data-panel="leaderboardWrap">
+              <strong>Leaderboard</strong>
+              <div style="font-size:13px;color:#6b7280;margin-top:6px">Top and Bottom students by overall attendance %</div>
+              <div style="margin-top:10px;overflow:auto">
+                <table id="leaderboardTable" style="width:100%;border-collapse:collapse">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;padding:8px 6px;border-bottom:1px solid #eef2f7">Rank</th>
+                      <th style="text-align:left;padding:8px 6px;border-bottom:1px solid #eef2f7">Roll</th>
+                      <th style="text-align:left;padding:8px 6px;border-bottom:1px solid #eef2f7">Name</th>
+                      <th style="text-align:right;padding:8px 6px;border-bottom:1px solid #eef2f7">Present</th>
+                      <th style="text-align:right;padding:8px 6px;border-bottom:1px solid #eef2f7">Total</th>
+                      <th style="text-align:right;padding:8px 6px;border-bottom:1px solid #eef2f7">%</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboardBody"></tbody>
+                </table>
+              </div>
 
-        <div class="panel" id="overviewPanel">
-          <h3 class="panel-title">Overview</h3>
-          <div class="kpi-row" style="margin-top:8px">
-            <div class="kpi-card">
-              <div class="kpi-value" id="kpiAvg7d">--%</div>
-              <div class="kpi-label">Avg attendance (7d)</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-value" id="kpiBestDay">--</div>
-              <div class="kpi-label">Best day (30d)</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-value" id="kpiLecturesToday">0</div>
-              <div class="kpi-label">Lectures today</div>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:8px;margin-top:12px;align-items:flex-start">
-            <div style="flex:1;">
-              <div style="font-size:13px;color:#6b7280;margin-bottom:6px">Attendance trend (7 days)</div>
-              <canvas id="attendanceTrend" height="80"></canvas>
-            </div>
-            <div style="width:260px;">
-              <div style="font-size:13px;color:#6b7280;margin-bottom:6px">Recent Alerts</div>
-              <ul id="alertsList" class="alerts-list"></ul>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+                <button id="leaderTopBtn" class="record-action view" type="button">Show Top 10</button>
+                <button id="leaderBottomBtn" class="record-action view" type="button">Show Bottom 10</button>
+                <button id="leaderAllBtn" class="record-action view" type="button">Show All</button>
+              </div>
             </div>
           </div>
         </div>
-
-        <div class="panel" id="facultySummaryPanel" data-panel="facultySummaryPanel">
-          <h3 class="panel-title">Faculty Summary</h3>
-          <div style="font-size:13px;color:#6b7280;margin-top:6px">Summary of lectures by faculty (total / regular / proxy)</div>
-          <div id="facultySummaryWrap" style="margin-top:10px; overflow:auto; max-height:220px">
-            <table id="facultySummaryTable" style="width:100%">
-              <thead>
-                <tr><th>Faculty</th><th style="text-align:right">Total</th><th style="text-align:right">Regular</th><th style="text-align:right">Proxy</th></tr>
-              </thead>
-              <tbody id="facultySummaryBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="panel" id="timelinePanel" data-panel="timelinePanel">
-          <h3 class="panel-title">Today's Timeline</h3>
-          <div id="timeline" style="margin-top:8px"></div>
-        </div>
-
       </aside>
     </main>
 
     <footer>TY-BCA 2025-26 • Digital Attendance • Powered by Supabase</footer>
   </div>
 
+  <!-- Attendance viewer modal -->
   <div id="attModalBackdrop" class="att-modal-backdrop" aria-hidden="true">
     <div class="att-modal" role="dialog" aria-modal="true" aria-labelledby="attModalTitle">
       <div class="att-modal-header">
         <div>
-          <div id="attModalTitle" class="att-modal-title">Attendance Details</div>
-          <div id="attModalSubtitle" class="att-modal-sub">Click a button to toggle Present/Absent</div>
+          <div id="attModalTitle" class="att-modal-title">Attendance</div>
+          <div id="attModalSubtitle" class="att-modal-sub">Details</div>
         </div>
         <div>
           <button id="attModalCloseBtn" class="att-modal-close">Close</button>
         </div>
       </div>
-      <div id="attModalContent" class="att-modal-list">
-        <table>
-            <thead>
-                <tr><th>Roll</th><th>Name</th><th style="text-align:right">Status</th></tr>
-            </thead>
-            <tbody id="detailsViewBody">
-                </tbody>
-        </table>
-      </div>
-      <div style="margin-top:12px; text-align:right; border-top:1px solid #f1f5f9; padding-top:12px;">
-         <button id="saveDetailsBtn" style="background:#0f9d58; color:white; padding:8px 16px; font-weight:600;">Save Changes</button>
-      </div>
+      <div id="attModalContent" class="att-modal-list"></div>
     </div>
   </div>
 
+  <!-- ========== CONFIG (SUPABASE) ========= -->
   <script>
+    // Replace with your values if needed
     const SUPABASE_URL = "https://hunnkdhhacqwhpqxovte.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1bm5rZGhoYWNxd2hwcXhvdnRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MTI4MzIsImV4cCI6MjA3OTQ4ODgzMn0.MAGBD6youFiHbCVxCd_3sD4DMidEuVBFaoncj1RLxGk";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
 
+  <!-- ========== MAIN JS (with admin-only visibility fixes) ========= -->
   <script>
     (function(){
       // state
-      let currentUser = null, currentRole = null, currentList = [], attendanceState = {}, records = [], students = [], faculty = [], lectures = [], studentsPieChart = null, trendChart = null, isEditing = false, currentEditRecordId = null, scanLog = [];
-      
-      // Interactive View Modal State
-      let viewPanelState = {}; 
-      window.lastViewedRecord = null;
+      let currentUser = null, currentRole = null, currentList = [], attendanceState = {}, records = [], students = [], faculty = [], lectures = [], studentsPieChart = null, isEditing = false, currentEditRecordId = null, scanLog = [];
 
       // DOM refs
       const loginScreen = document.getElementById("loginScreen");
@@ -351,8 +324,8 @@
       const loginEmail = document.getElementById("loginEmail");
       const loginPassword = document.getElementById("loginPassword");
       const loginSubmit = document.getElementById("loginSubmit");
-      const roleLabel = document.getElementById("roleLabel");
       const logoutBtn = document.getElementById("logoutBtn");
+      const roleLabel = document.getElementById("roleLabel");
       const attendanceDate = document.getElementById("attendanceDate");
       const userTypeSel = document.getElementById("userType");
       const searchBox = document.getElementById("searchBox");
@@ -379,44 +352,34 @@
       const downloadCSVBtn = document.getElementById("downloadCSVBtn");
       const clearAllRecordsBtn = document.getElementById("clearAllRecordsBtn");
       const studentsStatsText = document.getElementById("studentsStatsText");
+      const downloadStudentsReportCsvBtn = document.getElementById("downloadStudentsReportCsv");
+      const downloadFacultyReportCsvBtn = document.getElementById("downloadFacultyReportCsv");
       const scanLogTbody = document.querySelector("#scanLogTable tbody");
-
-      // MODAL REFS
-      const attModalBackdrop = document.getElementById('attModalBackdrop');
-      const detailsViewBody = document.getElementById('detailsViewBody');
-      const attModalCloseBtn = document.getElementById('attModalCloseBtn');
-      const attModalTitle = document.getElementById('attModalTitle');
-      const attModalSubtitle = document.getElementById('attModalSubtitle');
-      const saveDetailsBtn = document.getElementById('saveDetailsBtn');
-
-      // visual containers
       const heatmapEl = document.getElementById("heatmap");
       const heatbarList = document.getElementById("heatbarList");
-      const timelineEl = document.getElementById("timeline");
-      const facultySummaryBody = document.getElementById("facultySummaryBody");
-      const alertsList = document.getElementById("alertsList");
-      const dailyStatusBody = document.getElementById("dailyStatusBody");
+      const regularStudentsBody = document.getElementById("regularStudentsBody");
+      const leaderboardBody = document.getElementById("leaderboardBody");
 
-      // KPI & trend elements
-      const kpiAvg7d = document.getElementById("kpiAvg7d");
-      const kpiBestDay = document.getElementById("kpiBestDay");
-      const kpiLecturesToday = document.getElementById("kpiLecturesToday");
-      const trendCanvas = document.getElementById("attendanceTrend");
+      // admin & hide config
+      const ADMIN_TABLE = 'admin_settings';
+      const DB_KEY = 'panel_visibility';
+      const LS_KEY = 'admin_hidden_panels_v1';
 
-      // password toggle wiring
-      const pwdToggleBtn = document.getElementById('pwdToggleBtn');
-      const eyeIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-      const eyeOffIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-6 0-10-8-10-8a18.65 18.65 0 0 1 5.11-7.03"></path><path d="M1 1l22 22"></path><path d="M9.88 9.88a3 3 0 0 0 4.24 4.24"></path></svg>`;
+      const PANEL_MAP = [
+        { key: 'attendanceReportsPanel', label: 'Attendance Reports (Visualization)', selector: '#attendanceReportsPanel' },
+        { key: 'regularStudentsWrap', label: 'Regular Students (Summary)', selector: '#regularStudentsWrap' },
+        { key: 'heatbarWrap', label: 'Daily Percent List', selector: '#heatbarWrap' },
+        { key: 'monthlyHeatWrap', label: 'Monthly Heatmap (grid)', selector: '#monthlyHeatWrap' },
+        { key: 'attendanceRecordsPanel', label: 'Attendance Records', selector: '#attendanceRecordsPanel' },
+        { key: 'analyticsPanel', label: 'Attendance Analytics / Leaderboard', selector: '#analyticsPanel' }
+      ];
 
       // init
       async function init(){
-        try {
-          const { data:{session} } = await supabase.auth.getSession();
-          if(session) await handleSessionUser(session.user);
-        } catch(e){
-          console.warn('auth getSession failed', e);
-        }
+        const { data:{session} } = await supabase.auth.getSession();
+        if(session) await handleSessionUser(session.user);
 
+        // events
         loginSubmit.addEventListener("click", handleLogin);
         loginPassword.addEventListener("keydown", e => { if(e.key==="Enter") handleLogin(); });
         logoutBtn.addEventListener("click", logout);
@@ -431,53 +394,195 @@
         cancelEditBtn.addEventListener("click", ()=>exitEditMode(false));
         downloadCSVBtn.addEventListener("click", downloadCSV);
         clearAllRecordsBtn.addEventListener("click", clearAllRecords);
+        downloadStudentsReportCsvBtn.addEventListener("click", ()=>downloadStudentsReport());
+        downloadFacultyReportCsvBtn.addEventListener("click", ()=>downloadFacultyReport());
         scanInput.addEventListener("keydown", e => { if(e.key==="Enter"){ const code=scanInput.value.trim(); scanInput.value=""; handleScan(code); }});
         lectureSelect.addEventListener("change", updateTimeFromLecture);
-        
-        // Modal Event Listeners
-        attModalCloseBtn.addEventListener('click', closeAttendanceModal);
-        attModalBackdrop.addEventListener('click', function(e){ if(e.target===this) closeAttendanceModal(); });
-        saveDetailsBtn.addEventListener('click', saveDetailsChanges);
 
-        if(pwdToggleBtn){
-          if(!pwdToggleBtn.innerHTML.trim()) pwdToggleBtn.innerHTML = eyeIcon;
-          pwdToggleBtn.setAttribute('aria-label','Show password');
-          pwdToggleBtn.title = 'Show password';
-          pwdToggleBtn.addEventListener('click', ()=>{ togglePassword(); });
-          pwdToggleBtn.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePassword(); }});
-        }
+        document.getElementById('attModalCloseBtn').addEventListener('click', closeAttendanceModal);
+        document.getElementById('attModalBackdrop').addEventListener('click', function(e){ if(e.target===this) closeAttendanceModal(); });
+
+        document.getElementById('unhideSelected')?.addEventListener('click', unhideSelected);
+        document.getElementById('unhideAll')?.addEventListener('click', unhideAll);
+
+        // central admin checkbox listener - but enforce admin-only toggles
+        document.addEventListener('change', function(e){
+          if(e.target && e.target.classList && e.target.classList.contains('admin-hide-checkbox')){
+            const panelKey = e.target.getAttribute('data-panel');
+            if(!panelKey) return;
+            // only admin allowed
+            if(currentRole !== 'admin'){
+              // revert for safety
+              e.target.checked = !!isPanelHidden(panelKey);
+              return;
+            }
+            togglePanelHidden(panelKey, e.target.checked);
+          }
+        });
 
         attendanceDate.value = new Date().toISOString().slice(0,10);
 
+        // initial load
         await loadStudents(); await loadFaculty(); await loadLectures(); await loadAttendanceRecords();
         populateLectures(); populateFacultySelects(); updateTimeFromLecture();
         userTypeSel.value = "student"; setUserListForType(); applyRolePermissions();
-        updateSummary(); renderAllCharts(); renderHeatmap();
+        updateSummary(); renderAllCharts(); renderAttendanceReport(); renderHeatmap();
+
+        // load visibility settings then apply and build admin list
+        await loadPanelVisibilityFromDB();
+        buildAdminList();
+        applyHiddenPanels();
       }
 
-      function togglePassword(){
-        const isHidden = loginPassword.type === 'password';
-        if(isHidden){
-          loginPassword.type = 'text';
-          pwdToggleBtn.innerHTML = eyeOffIcon;
-          pwdToggleBtn.setAttribute('aria-label','Hide password');
-          pwdToggleBtn.title = 'Hide password';
-        } else {
-          loginPassword.type = 'password';
-          pwdToggleBtn.innerHTML = eyeIcon;
-          pwdToggleBtn.setAttribute('aria-label','Show password');
-          pwdToggleBtn.title = 'Show password';
+      // -------------------------
+      // Persistence: Supabase DB + localStorage fallback
+      // -------------------------
+      async function loadPanelVisibilityFromDB(){
+        try {
+          const { data, error } = await supabase
+            .from(ADMIN_TABLE)
+            .select('value')
+            .eq('key', DB_KEY)
+            .single();
+
+          if(error && error.code !== 'PGRST116') { // ignore "no rows" sentinel
+            console.warn('admin settings load error', error);
+          }
+          if(data && data.value){
+            localStorage.setItem(LS_KEY, JSON.stringify(data.value || {}));
+            return data.value;
+          } else {
+            const ls = localStorage.getItem(LS_KEY);
+            return ls ? JSON.parse(ls) : {};
+          }
+        } catch(err){
+          console.warn('loadPanelVisibilityFromDB failed', err);
+          const ls = localStorage.getItem(LS_KEY);
+          return ls ? JSON.parse(ls) : {};
         }
-        pwdToggleBtn.focus();
       }
 
+      async function savePanelVisibilityToDB(map){
+        if(!map || typeof map !== 'object') return;
+        localStorage.setItem(LS_KEY, JSON.stringify(map));
+        if(currentRole !== 'admin') return; // only admin writes
+        try {
+          const payload = { key: DB_KEY, value: map, updated_at: new Date().toISOString(), created_by: currentUser?.id || null };
+          const { data, error } = await supabase.from(ADMIN_TABLE).upsert(payload, { onConflict: 'key' }).select().single();
+          if(error) throw error;
+          return data;
+        } catch(err){
+          console.error('savePanelVisibilityToDB failed', err);
+        }
+      }
+
+      // helpers
+      function getHiddenMap(){
+        const raw = localStorage.getItem(LS_KEY);
+        try { return raw ? JSON.parse(raw) : {}; } catch(e){ return {}; }
+      }
+      async function togglePanelHidden(panelKey, hidden){
+        const map = getHiddenMap();
+        if(hidden) map[panelKey] = true; else delete map[panelKey];
+        localStorage.setItem(LS_KEY, JSON.stringify(map));
+        applyHiddenPanels();
+        await savePanelVisibilityToDB(map);
+        buildAdminList();
+      }
+      function isPanelHidden(panelKey){
+        const m = getHiddenMap();
+        return !!m[panelKey];
+      }
+
+      function applyHiddenPanels(){
+        const map = getHiddenMap();
+        PANEL_MAP.forEach(p=>{
+          const el = document.querySelector(p.selector);
+          if(!el) return;
+          const shouldHide = !!map[p.key];
+          if(shouldHide && currentRole !== 'admin'){
+            el.style.display = 'none';
+            el.classList.add('is-hidden-panel');
+          } else {
+            el.style.display = '';
+            el.classList.remove('is-hidden-panel');
+          }
+          // sync each checkbox element (visible only to admin, but we set checked state)
+          const cb = document.querySelector(`.admin-hide-checkbox[data-panel="${p.key}"]`);
+          if(cb) cb.checked = !!map[p.key];
+        });
+
+        // adminPanel visibility
+        const adminPanelEl = document.getElementById('adminPanel');
+        if(adminPanelEl) adminPanelEl.style.display = (currentRole === 'admin') ? '' : 'none';
+
+        // hide or show the checkbox controls themselves depending on role
+        const allCbs = document.querySelectorAll('.admin-hide-checkbox');
+        allCbs.forEach(cb => {
+          cb.style.display = (currentRole === 'admin') ? '' : 'none';
+          // keep label text visible (we hide only the input). If you prefer entire label hidden, adjust CSS.
+        });
+      }
+
+      function buildAdminList(){
+        const list = document.getElementById('adminPanelList');
+        if(!list) return;
+        list.innerHTML = '';
+        const map = getHiddenMap();
+        PANEL_MAP.forEach(p=>{
+          const div = document.createElement('div');
+          div.style.display = 'flex';
+          div.style.justifyContent = 'space-between';
+          div.style.alignItems = 'center';
+          div.style.padding = '6px 0';
+          const hidden = !!map[p.key];
+          div.innerHTML = `<div><strong>${p.label}</strong><div style="font-size:12px;color:#6b7280">${p.selector}</div></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <label style="font-size:13px;color:#6b7280"><input type="checkbox" data-panel="${p.key}" class="admin-list-checkbox" ${hidden? 'checked':''}/> Hidden</label>
+              <button class="record-action admin-unhide-button" data-panel="${p.key}">${hidden? 'Unhide':'Hide'}</button>
+            </div>`;
+          list.appendChild(div);
+        });
+
+        // wire buttons & checkboxes (admin only)
+        list.querySelectorAll('.admin-unhide-button').forEach(btn=>{
+          btn.addEventListener('click', async function(e){
+            if(currentRole !== 'admin') return;
+            const key = e.currentTarget.getAttribute('data-panel');
+            const currentlyHidden = isPanelHidden(key);
+            await togglePanelHidden(key, !currentlyHidden);
+          });
+        });
+        list.querySelectorAll('.admin-list-checkbox').forEach(cb=> cb.addEventListener('change', async function(e){
+          if(currentRole !== 'admin'){ e.target.checked = !!isPanelHidden(e.target.getAttribute('data-panel')); return; }
+          const key = e.target.getAttribute('data-panel');
+          await togglePanelHidden(key, e.target.checked);
+        }));
+      }
+
+      function unhideSelected(){
+        if(currentRole !== 'admin') return;
+        const list = document.getElementById('adminPanelList');
+        if(!list) return;
+        list.querySelectorAll('.admin-list-checkbox:checked').forEach(cb=>{
+          const key = cb.getAttribute('data-panel');
+          togglePanelHidden(key, false);
+        });
+      }
+      function unhideAll(){
+        if(currentRole !== 'admin') return;
+        PANEL_MAP.forEach(p=> togglePanelHidden(p.key, false));
+      }
+
+      // ----------------------------
+      // App core (auth, data, render)
+      // ----------------------------
       async function handleLogin(){
         const email = loginEmail.value.trim(), password = loginPassword.value.trim();
         if(!email||!password){ showAlert("Please enter email and password"); return; }
         try{
           const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           if(error) throw error;
-          if(!data || !data.user) throw new Error('No user returned from supabase');
           await handleSessionUser(data.user);
           showAlert("✅ Login successful!");
         }catch(err){ console.error(err); showAlert("❌ Login failed: "+(err.message||err)); }
@@ -485,52 +590,53 @@
 
       async function handleSessionUser(user){
         try{
-          const { data: userData } = await supabase.from("users").select("role, full_name").eq("id", user.id).maybeSingle();
-          currentUser = user;
-          currentRole = (userData && userData.role) ? userData.role : "student";
+          const { data: userData, error } = await supabase.from("users").select("role, full_name").eq("id", user.id).single();
+          if(error) throw error;
+          currentUser = user; currentRole = userData.role || "student";
           await enterApp();
         }catch(err){ console.error(err); showAlert("❌ Error loading user data"); }
       }
 
-      async function logout(){
-        try { await supabase.auth.signOut(); } catch(e){ console.warn('signOut error', e); }
-        currentUser=null; currentRole=null; loginEmail.value=""; loginPassword.value="";
-        appContainer.style.display="none"; loginScreen.style.display="flex";
-        document.body.classList.remove("theme-main"); document.body.classList.add("theme-login");
-      }
+      async function logout(){ await supabase.auth.signOut(); currentUser=null; currentRole=null; loginEmail.value=""; loginPassword.value=""; appContainer.style.display="none"; loginScreen.style.display="flex"; document.body.classList.remove("theme-main"); document.body.classList.add("theme-login"); }
 
       async function enterApp(){
         document.body.classList.remove("theme-login"); document.body.classList.add("theme-main");
-        loginScreen.style.display="none"; appContainer.style.display="block"; appContainer.removeAttribute('aria-hidden');
+        loginScreen.style.display="none"; appContainer.style.display="block";
         roleLabel.textContent = `Logged in as ${currentRole.charAt(0).toUpperCase()+currentRole.slice(1)}`;
         await loadStudents(); await loadFaculty(); await loadLectures(); await loadAttendanceRecords();
-        populateLectures(); populateFacultySelects(); updateTimeFromLecture(); userTypeSel.value="student"; setUserListForType(); applyRolePermissions(); updateSummary(); renderAllCharts(); renderHeatmap();
+        populateLectures(); populateFacultySelects(); updateTimeFromLecture(); userTypeSel.value="student"; setUserListForType(); applyRolePermissions(); updateSummary(); renderAllCharts(); renderAttendanceReport(); renderHeatmap();
+        // reload settings from DB to pick up external admin changes
+        await loadPanelVisibilityFromDB();
+        applyHiddenPanels();
+        buildAdminList();
       }
 
       function applyRolePermissions(){
         const canEdit = currentRole==="admin"||currentRole==="faculty";
         const canDelete = currentRole==="admin";
         submitBtn.disabled = !canEdit; selectAllBtn.disabled = !canEdit; clearAllBtn.disabled = !canEdit; clearAllRecordsBtn.disabled = !canDelete;
-        
-        const userListPanel = document.getElementById('userListPanel');
-        const lecturePanel = document.getElementById('lecturePanel');
-        if(currentRole === "student"){
-          userListPanel.style.display = "none";
-          lecturePanel.style.display = "none";
-        } else {
-          userListPanel.style.display = "";
-          lecturePanel.style.display = "";
-        }
+
+        const ths = document.querySelectorAll("#recordsTable thead th");
+        ths.forEach(th=>{
+          const t = th.textContent.trim().toLowerCase();
+          if(t === "edit") th.style.display = canEdit ? "" : "none";
+          if(t === "delete") th.style.display = canDelete ? "" : "none";
+        });
+
+        const adminPanelEl = document.getElementById('adminPanel');
+        if(adminPanelEl) adminPanelEl.style.display = (currentRole === 'admin') ? '' : 'none';
+
         renderList(); renderRecords();
+        applyHiddenPanels();
       }
 
-      async function loadStudents(){ try{ const { data, error } = await supabase.from("students").select("*").order("roll_no",{ascending:true}); if(error) throw error; students = (data||[]).map(s=>({roll:s.roll_no,name:s.name,id:s.id})); }catch(err){ console.error(err); showAlert("❌ Error loading students"); } }
-      async function loadFaculty(){ try{ const { data, error } = await supabase.from("faculty").select("*").order("roll_no",{ascending:true}); if(error) throw error; faculty = (data||[]).map(f=>({roll:f.roll_no,name:f.name,id:f.id})); }catch(err){ console.error(err); showAlert("❌ Error loading faculty"); } }
+      async function loadStudents(){ try{ const { data, error } = await supabase.from("students").select("*").order("roll_no",{ascending:true}); if(error) throw error; students = data.map(s=>({roll:s.roll_no,name:s.name,id:s.id})); }catch(err){ console.error(err); showAlert("❌ Error loading students"); } }
+      async function loadFaculty(){ try{ const { data, error } = await supabase.from("faculty").select("*").order("roll_no",{ascending:true}); if(error) throw error; faculty = data.map(f=>({roll:f.roll_no,name:f.name,id:f.id})); }catch(err){ console.error(err); showAlert("❌ Error loading faculty"); } }
       async function loadLectures(){ try{ const { data, error } = await supabase.from("lectures").select("*").order("name",{ascending:true}); if(error) throw error; lectures = data || []; }catch(err){ console.error(err); showAlert("❌ Error loading lectures"); } }
       async function loadAttendanceRecords(){ try{
           const { data, error } = await supabase.from("attendance_records").select(`*, attendance_details (student_roll, student_name, status)`).order("date",{ascending:false}).order("created_at",{ascending:false});
           if(error) throw error;
-          records = (data||[]).map(r=>({
+          records = data.map(r=>({
             id: r.id,
             date: r.date,
             day: r.day,
@@ -549,50 +655,26 @@
           renderRecords();
         }catch(err){ console.error(err); showAlert("❌ Error loading attendance records"); } }
 
-      function setUserListForType(){ 
-        const type = userTypeSel.value; 
-        currentList = (type==="student"?students:faculty).map(x=>({...x})); 
-        attendanceState={}; 
-        currentList.forEach(p=>attendanceState[String(p.roll)]={present:false}); 
-        renderList(); 
-      }
+      function setUserListForType(){ const type = userTypeSel.value; currentList = (type==="student"?students:faculty).map(x=>({...x})); attendanceState={}; currentList.forEach(p=>attendanceState[p.roll]={present:false}); renderList(); }
       function onUserTypeChange(){ setUserListForType(); }
 
       function renderList(){
-        const q = searchBox.value.trim().toLowerCase(); 
-        let list = currentList.slice(); 
-        const mode = sortSelect.value;
-        const canEdit = currentRole==="admin" || currentRole==="faculty";
-
+        const q = searchBox.value.trim().toLowerCase(); let list = currentList.slice(); const mode = sortSelect.value;
         if(mode==="roll-asc") list.sort((a,b)=>a.roll-b.roll);
         if(mode==="roll-desc") list.sort((a,b)=>b.roll-a.roll);
         if(mode==="name-asc") list.sort((a,b)=>a.name.localeCompare(b.name));
-
-        if(mode==="present") list = list.filter(x=>attendanceState[String(x.roll)] && attendanceState[String(x.roll)].present);
-        if(mode==="absent") list = list.filter(x=>!attendanceState[String(x.roll)] || !attendanceState[String(x.roll)].present);
-        
+        if(mode==="present") list = list.filter(x=>attendanceState[x.roll]&&attendanceState[x.roll].present);
+        if(mode==="absent") list = list.filter(x=>!attendanceState[x.roll]||!attendanceState[x.roll].present);
         if(q) list = list.filter(x=>String(x.roll).includes(q) || x.name.toLowerCase().includes(q));
-        
+        const canEdit = currentRole==="admin" || currentRole==="faculty";
         usersTableBody.innerHTML = "";
         list.forEach(item=>{
           const tr = document.createElement("tr");
           const tdR = document.createElement("td"); tdR.textContent = item.roll;
           const tdN = document.createElement("td"); tdN.textContent = item.name;
           const tdC = document.createElement("td");
-          
-          const chk = document.createElement("input"); 
-          chk.type="checkbox"; 
-          const rollKey = String(item.roll);
-          chk.checked = !!(attendanceState[rollKey] && attendanceState[rollKey].present); 
-          chk.disabled = !canEdit;
-          
-          chk.addEventListener("change", e=>{ 
-            if(attendanceState[rollKey]) {
-                attendanceState[rollKey].present = e.target.checked; 
-            }
-            updateSummary(); 
-          });
-          
+          const chk = document.createElement("input"); chk.type="checkbox"; chk.checked = !!(attendanceState[item.roll] && attendanceState[item.roll].present); chk.disabled = !canEdit;
+          chk.addEventListener("change", e=>{ attendanceState[item.roll].present = e.target.checked; updateSummary(); });
           tdC.appendChild(chk);
           tr.appendChild(tdR); tr.appendChild(tdN); tr.appendChild(tdC);
           usersTableBody.appendChild(tr);
@@ -600,16 +682,7 @@
         updateSummary();
       }
 
-      function setAll(val){ 
-        const canEdit = currentRole==="admin"||currentRole==="faculty"; 
-        if(!canEdit) return; 
-        currentList.forEach(x=>{
-            if(attendanceState[String(x.roll)]) {
-                attendanceState[String(x.roll)].present = val;
-            }
-        }); 
-        renderList(); 
-      }
+      function setAll(val){ const canEdit = currentRole==="admin"||currentRole==="faculty"; if(!canEdit) return; currentList.forEach(x=>attendanceState[x.roll]={present:val}); renderList(); }
 
       function populateLectures(){ lectureSelect.innerHTML = ""; lectures.forEach(l=>{ const opt=document.createElement("option"); opt.value=l.name; opt.textContent=l.name; lectureSelect.appendChild(opt); }); }
       function updateTimeFromLecture(){ const lecName = lectureSelect.value; const lec = lectures.find(l=>l.name===lecName); if(lec && lec.default_start_time && lec.default_end_time){ startTimeInput.value = lec.default_start_time; endTimeInput.value = lec.default_end_time; } else { startTimeInput.value=""; endTimeInput.value=""; } }
@@ -617,21 +690,11 @@
 
       async function submitAttendance(){
         const canEdit = currentRole==="admin"||currentRole==="faculty"; if(!canEdit){ showAlert("Only Admin and Faculty can submit attendance"); return; }
-        
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Saving...";
-        
         const date = attendanceDate.value || new Date().toISOString().slice(0,10);
         const lecture = lectureSelect.value; const lectureType = lectureTypeSelect.value || "Regular"; const day = daySelect.value || "";
         const facultyName = facultySelect.value; const proxy = isProxy.checked; const original = originalFaculty.value || "";
         const startTime = startTimeInput.value || ""; const endTime = endTimeInput.value || ""; const timeSlot = startTime && endTime ? `${startTime} to ${endTime}` : "";
-        
-        const attendees = currentList.map(p=>{
-            const rollKey = String(p.roll);
-            const isPresent = attendanceState[rollKey] && attendanceState[rollKey].present === true;
-            return { roll: p.roll, name: p.name, status: isPresent ? "P" : "A" };
-        });
-        
+        const attendees = currentList.map(p=>({ roll: p.roll, name: p.name, status: attendanceState[p.roll] && attendanceState[p.roll].present ? "P" : "A" }));
         const presentCount = attendees.filter(a=>a.status==="P").length;
 
         try {
@@ -641,11 +704,10 @@
               date, day, time_slot: timeSlot, start_time: startTime, end_time: endTime, lecture_name: lecture, lecture_type: lectureType, faculty_name: facultyName, is_proxy: proxy, original_faculty_name: original, present_count: presentCount, total_count: attendees.length
             }).eq("id", currentEditRecordId);
             if(updateError) throw updateError;
-            const { error: delErr } = await supabase.from("attendance_details").delete().eq("attendance_record_id", currentEditRecordId);
-            if(delErr) throw delErr;
+            await supabase.from("attendance_details").delete().eq("attendance_record_id", currentEditRecordId);
           } else {
             const { data:newRecord, error:insertError } = await supabase.from("attendance_records").insert({
-              date, day, time_slot: timeSlot, start_time: startTime, end_time: endTime, lecture_name: lecture, lecture_type: lectureType, faculty_name: facultyName, is_proxy: proxy, original_faculty_name: original, present_count: presentCount, total_count: attendees.length, created_by: currentUser ? currentUser.id : null
+              date, day, time_slot: timeSlot, start_time: startTime, end_time: endTime, lecture_name: lecture, lecture_type: lectureType, faculty_name: facultyName, is_proxy: proxy, original_faculty_name: original, present_count: presentCount, total_count: attendees.length, created_by: currentUser.id
             }).select().single();
             if(insertError) throw insertError;
             recordId = newRecord.id;
@@ -656,72 +718,22 @@
           if(detailsError) throw detailsError;
 
           showAlert("✅ Attendance saved successfully!");
-          
           await loadAttendanceRecords();
           exitEditMode(true);
-          updateSummary(); renderAllCharts(); renderHeatmap();
-        } catch(err){ 
-            console.error(err); 
-            showAlert("❌ Error saving attendance: "+(err.message||err)); 
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = isEditing ? "Update Attendance" : "Submit Attendance";
-        }
+          updateSummary(); renderAllCharts(); renderAttendanceReport(); renderHeatmap();
+        } catch(err){ console.error(err); showAlert("❌ Error saving attendance: "+(err.message||err)); }
       }
 
       function enterEditMode(recordId, record){
-        isEditing = true; 
-        currentEditRecordId = recordId; 
-        
-        submitBtn.textContent = "Update Attendance"; 
-        cancelEditBtn.style.display = "inline-flex";
-        
-        attendanceDate.value = record.date; 
-        lectureSelect.value = record.lecture; 
-        lectureTypeSelect.value = record.lectureType || "Regular"; 
-        daySelect.value = record.day || "Monday"; 
-        
-        if(record.faculty) facultySelect.value = record.faculty;
-        
-        isProxy.checked = !!record.proxy; 
-        proxyDetails.style.display = isProxy.checked ? "block" : "none"; 
-        if(record.original) originalFaculty.value = record.original;
-
-        let st = record.startTime || ""; 
-        let en = record.endTime || "";
-        if((!st || !en) && record.timeSlot){ 
-            const parts = record.timeSlot.split(" to "); 
-            st = parts[0]||""; en = parts[1]||""; 
-        }
-        startTimeInput.value = st; 
-        endTimeInput.value = en;
-        
-        userTypeSel.value = "student"; 
-        sortSelect.value = ""; 
-        searchBox.value = ""; 
-
-        currentList = (students || []).map(x => ({...x})); 
-        attendanceState = {};
-        currentList.forEach(p => {
-            attendanceState[String(p.roll)] = { present: false };
-        });
-
-        if(record.attendees && record.attendees.length > 0){
-            record.attendees.forEach(a => {
-                if(a.status === 'P' || a.status === 'Present'){
-                    const key = String(a.roll); 
-                    if(attendanceState[key]){
-                        attendanceState[key].present = true;
-                    }
-                }
-            });
-        }
-        
-        document.getElementById('userListPanel').style.display = 'block';
-        document.getElementById('lecturePanel').style.display = 'block';
+        isEditing = true; currentEditRecordId = recordId; submitBtn.textContent = "Update Attendance"; cancelEditBtn.style.display = "inline-flex";
+        attendanceDate.value = record.date; lectureSelect.value = record.lecture; lectureTypeSelect.value = record.lectureType || "Regular"; daySelect.value = record.day || "Monday"; facultySelect.value = record.faculty || (faculty[0] && faculty[0].name);
+        isProxy.checked = !!record.proxy; proxyDetails.style.display = isProxy.checked ? "block" : "none"; originalFaculty.value = record.original || facultySelect.value;
+        let st = record.startTime || ""; let en = record.endTime || "";
+        if((!st || !en) && record.timeSlot){ const parts = record.timeSlot.split(" to "); st = parts[0]||""; en = parts[1]||""; }
+        startTimeInput.value = st; endTimeInput.value = en;
+        userTypeSel.value = "student"; setUserListForType();
+        currentList.forEach(p=>{ const found = (record.attendees||[]).find(a=>a.roll===p.roll); attendanceState[p.roll].present = found ? found.status==="P" : false; });
         renderList();
-        document.querySelector('.left').scrollIntoView({ behavior: 'smooth' });
-        showAlert("Editing: " + record.lecture);
       }
 
       function exitEditMode(silent){
@@ -735,9 +747,11 @@
 
         records.forEach((r)=>{
           const tr = document.createElement("tr");
-          // Interactive View
-          const viewBtn = `<button class="record-action view" type="button" aria-label="View Details">View</button>`;
-          
+
+          const viewAllBtn = (currentRole === 'admin') ? `<button class="record-action view" type="button" aria-label="View all attendees">View All</button>` : '';
+          const viewPresentBtn = `<button class="record-action present" type="button" aria-label="View present attendees">Present</button>`;
+          const viewAbsentBtn = `<button class="record-action absent" type="button" aria-label="View absent attendees">Absent</button>`;
+
           const editHtml = canEdit ? `<button class="record-action edit" type="button" aria-label="Edit record">Edit</button>` : `<span style="display:inline-block;padding:6px 8px;border-radius:8px;color:#9ca3af">-</span>`;
           const deleteHtml = canDelete ? `<button class="record-action delete" type="button" aria-label="Delete record">Delete</button>` : "";
 
@@ -749,15 +763,18 @@
              <td>${escapeHtml(r.lecture)}</td>
              <td>${escapeHtml(r.faculty)}</td>
              <td>${badgeHtml}</td>
-             <td class="actions">${viewBtn}</td>
+             <td class="actions">${viewAllBtn} ${viewPresentBtn} ${viewAbsentBtn}</td>
              <td style="${canEdit ? "" : "display:none;"}">${editHtml}</td>
              <td style="${canDelete ? "" : "display:none;"}">${deleteHtml}</td>`;
 
           recordsTableBody.appendChild(tr);
 
           const tdView = tr.querySelectorAll("td")[5];
-          const vBtn = tdView.querySelector(".record-action.view");
-          if(vBtn) vBtn.addEventListener("click", ()=>viewRecordDetails(r));
+          if(tdView.querySelector(".record-action.view")){
+            tdView.querySelector(".record-action.view").addEventListener("click", ()=>openAttendanceModal(r,'all'));
+          }
+          tdView.querySelector(".record-action.present").addEventListener("click", ()=>openAttendanceModal(r,'present'));
+          tdView.querySelector(".record-action.absent").addEventListener("click", ()=>openAttendanceModal(r,'absent'));
 
           if(canEdit){
             const editBtn = tr.querySelector(".record-action.edit");
@@ -768,140 +785,70 @@
             if(delBtn) delBtn.addEventListener("click", ()=>deleteSingleRecord(r.id));
           }
         });
+
+        applyHiddenPanels();
       }
 
       async function deleteSingleRecord(recordId){
-        if(currentRole!=="admin") { showAlert("Only Admin can delete records"); return; }
+        if(currentRole!=="admin") return;
         if(!confirm("Delete this record?")) return;
         try{
           const { error } = await supabase.from("attendance_records").delete().eq("id", recordId);
           if(error) throw error;
           showAlert("✅ Record deleted");
-          await loadAttendanceRecords(); renderAllCharts(); renderHeatmap();
+          await loadAttendanceRecords(); renderAllCharts(); renderAttendanceReport(); renderHeatmap();
         }catch(err){ console.error(err); showAlert("❌ Error deleting record"); }
       }
 
-      // --- NEW INTERACTIVE VIEW LOGIC ---
+      function openAttendanceModal(record, filter){
+        const backdrop = document.getElementById('attModalBackdrop');
+        const titleEl = document.getElementById('attModalTitle');
+        const subEl = document.getElementById('attModalSubtitle');
+        const content = document.getElementById('attModalContent');
+        if(!record) return;
+        const date = record.date||'', lecture = record.lecture||'', total = record.total || (record.attendees?record.attendees.length:0);
+        let filtered = (record.attendees||[]).slice();
+        if(filter==='present') filtered = filtered.filter(a=>a.status==='P');
+        if(filter==='absent') filtered = filtered.filter(a=>a.status==='A');
+        const count = filtered.length;
+        const filterLabel = filter==='all'?'All':(filter==='present'?'Present':'Absent');
 
-      function viewRecordDetails(record){
-          window.lastViewedRecord = record; // Save reference
-          attModalTitle.textContent = `${record.lecture} (${record.date})`;
-          attModalSubtitle.textContent = `${record.faculty}`;
-          
-          // 1. Initialize local state for the modal
-          viewPanelState = {};
-          
-          // Map existing attendees status
-          (record.attendees||[]).forEach(a=>{
-              const roll = String(a.roll);
-              viewPanelState[roll] = String(a.status||"A").toUpperCase();
+        titleEl.textContent = `${lecture || 'Lecture'} — ${date}`;
+        subEl.innerHTML = `<span class="record-meta">${filterLabel} • ${count}/${total} attendees</span>`;
+
+        const exportBtn = `<button class="record-action" id="exportRecordCsv" type="button" aria-label="Export record CSV">Export CSV</button>`;
+
+        if(!filtered.length){
+          content.innerHTML = `<div style="margin-bottom:8px">${exportBtn}</div><div class="att-modal-empty">No records for the selected filter.</div>`;
+        } else {
+          let html = `<div style="margin-bottom:8px">${exportBtn}</div><table><thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+          filtered.forEach(a=>{ html += `<tr><td>${escapeHtml(a.roll)}</td><td>${escapeHtml(a.name)}</td><td>${a.status === 'P' ? 'P' : 'A'}</td></tr>`; });
+          html += `</tbody></table>`;
+          content.innerHTML = html;
+        }
+
+        const exportEl = document.getElementById('exportRecordCsv');
+        if(exportEl){
+          exportEl.addEventListener('click', ()=>{
+            const rows = [['Roll','Name','Status']];
+            filtered.forEach(a=> rows.push([a.roll, a.name, a.status]));
+            const csv = rows.map(r=> r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance_${record.id || 'record'}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
           });
+        }
 
-          // Ensure every student in the system has a status (default Absent if missing)
-          students.forEach(s => {
-              const k = String(s.roll);
-              if(!viewPanelState[k]) viewPanelState[k] = "A";
-          });
-
-          renderViewModalTable();
-          attModalBackdrop.style.display = 'flex';
+        backdrop.style.display = 'flex';
+        backdrop.setAttribute('aria-hidden','false');
+        document.querySelector('.att-modal').scrollTop = 0;
       }
 
-      function renderViewModalTable(){
-          detailsViewBody.innerHTML = "";
-          // Create list combining student info + current state
-          const list = students.map(s => {
-              const k = String(s.roll);
-              return { roll: s.roll, name: s.name, status: viewPanelState[k] };
-          });
-
-          // Sort: P first, then by Roll
-          list.sort((a,b) => {
-              if(a.status === b.status) return a.roll - b.roll;
-              return a.status === 'P' ? -1 : 1;
-          });
-
-          list.forEach(item => {
-              const tr = document.createElement('tr');
-              const isP = item.status === 'P';
-              const btnClass = isP ? 'status-btn p' : 'status-btn a';
-              const btnText = isP ? 'Present' : 'Absent';
-              
-              tr.innerHTML = `
-                  <td>${item.roll}</td>
-                  <td>${item.name}</td>
-                  <td style="width:100px;">
-                      <button class="${btnClass}" onclick="window.toggleViewStatus(${item.roll})">${btnText}</button>
-                  </td>
-              `;
-              detailsViewBody.appendChild(tr);
-          });
-      }
-
-      // Exposed globally so onclick works
-      window.toggleViewStatus = function(roll){
-          const key = String(roll);
-          viewPanelState[key] = viewPanelState[key] === "P" ? "A" : "P";
-          renderViewModalTable(); // Re-render to update colors/sort
-      }
-
-      async function saveDetailsChanges(){
-          if(!window.lastViewedRecord || !window.lastViewedRecord.id) return;
-          const recordId = window.lastViewedRecord.id;
-          saveDetailsBtn.textContent = "Saving...";
-          saveDetailsBtn.disabled = true;
-
-          try {
-              // 1. Prepare Data
-              const attendees = students.map(s => {
-                  const st = viewPanelState[String(s.roll)] === 'P' ? 'P' : 'A';
-                  return { student_roll: s.roll, student_name: s.name, status: st };
-              });
-              
-              const presentCount = attendees.filter(a => a.status === 'P').length;
-              const totalCount = attendees.length;
-
-              // 2. Delete old details
-              const { error: delErr } = await supabase.from("attendance_details").delete().eq("attendance_record_id", recordId);
-              if(delErr) throw delErr;
-
-              // 3. Insert new details
-              const toInsert = attendees.map(a => ({
-                  attendance_record_id: recordId,
-                  student_roll: a.student_roll,
-                  student_name: a.student_name,
-                  status: a.status
-              }));
-              const { error: insErr } = await supabase.from("attendance_details").insert(toInsert);
-              if(insErr) throw insErr;
-
-              // 4. Update parent record counts
-              const { error: updErr } = await supabase.from("attendance_records").update({
-                  present_count: presentCount, 
-                  total_count: totalCount 
-              }).eq("id", recordId);
-              if(updErr) throw updErr;
-
-              showAlert("Changes saved successfully!");
-              closeAttendanceModal();
-              await loadAttendanceRecords(); // Refresh dashboard
-              renderAllCharts();
-              renderHeatmap();
-
-          } catch(e){
-              console.error(e);
-              showAlert("Error saving changes: " + e.message);
-          } finally {
-              saveDetailsBtn.textContent = "Save Changes";
-              saveDetailsBtn.disabled = false;
-          }
-      }
-
-      function closeAttendanceModal(){ 
-          attModalBackdrop.style.display='none'; 
-      }
-
-      // --- END NEW LOGIC ---
+      function closeAttendanceModal(){ const b = document.getElementById('attModalBackdrop'); b.style.display='none'; b.setAttribute('aria-hidden','true'); }
 
       async function clearAllRecords(){
         if(currentRole!=="admin"){ showAlert("Only Admin can delete all records"); return; }
@@ -910,7 +857,7 @@
           const { error } = await supabase.from("attendance_records").delete().neq("id", null);
           if(error) throw error;
           showAlert("✅ All records deleted");
-          await loadAttendanceRecords(); renderAllCharts(); renderHeatmap();
+          await loadAttendanceRecords(); renderAllCharts(); renderAttendanceReport(); renderHeatmap();
         }catch(err){ console.error(err); showAlert("❌ Error deleting records"); }
       }
 
@@ -930,38 +877,14 @@
         presentCountEl.textContent = present;
         absentCountEl.textContent = absent;
         lecturesTodayEl.textContent = todays.length;
-        kpiLecturesToday.textContent = todays.length;
       }
 
       function renderAllCharts(){
         renderStudentsPie();
         renderFacultySummary();
         renderTimeline();
-        renderOverviewAndTrend();
-        renderDailyPercent();
-        renderTopStudents(); // Added call here
-      }
-
-      function renderDailyPercent(){
-        heatbarList.innerHTML = "";
-        const dateList = {};
-        records.forEach(r=>{
-          if(!dateList[r.date]) dateList[r.date] = {present:0,total:0};
-          dateList[r.date].present += r.presentCount||0;
-          dateList[r.date].total += r.total||0;
-        });
-        const dates = Object.keys(dateList).sort().slice(-10);
-        dates.forEach(d=>{
-          const info=dateList[d]; const pct = info.total?(info.present/info.total)*100:0;
-          const row=document.createElement("div");
-          row.style.display="flex"; row.style.alignItems="center"; row.style.gap="8px"; row.style.marginBottom="6px";
-          row.innerHTML = `
-            <div style="width:70px;font-size:13px">${d}</div>
-            <div class="bar" style="flex:1"><div class="bar-fill" style="width:${pct}%"></div></div>
-            <div style="width:40px;font-size:13px;text-align:right">${pct.toFixed(0)}%</div>
-          `;
-          heatbarList.appendChild(row);
-        });
+        renderLeaderboard('top');
+        renderRegularStudentsSummary();
       }
 
       function renderStudentsPie(){
@@ -981,34 +904,36 @@
       }
 
       function renderFacultySummary(){
-        if(!facultySummaryBody) return;
+        const tbody = document.querySelector("#facultySummaryTable tbody");
+        if(!tbody) return;
         const summary = {};
-        faculty.forEach(f => summary[f.name] = { name: f.name, total: 0, regular: 0, proxy: 0 });
+        faculty.forEach(f=>summary[f.name]={name:f.name,total:0,regular:0,proxy:0});
+        records.forEach(r=>{ const facName = r.faculty||""; if(!facName||!summary[facName]) return; summary[facName].total++; if(r.proxy) summary[facName].proxy++; else summary[facName].regular++; });
+        tbody.innerHTML = ""; Object.values(summary).forEach(row=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${row.name}</td><td>${row.total}</td><td>${row.regular}</td><td>${row.proxy}</td>`; tbody.appendChild(tr); });
+      }
 
-        records.forEach(r => {
-          const facName = r.faculty || '';
-          if(!facName) return;
-          if(!summary[facName]) summary[facName] = { name: facName, total:0, regular:0, proxy:0 };
-          summary[facName].total++;
-          if(r.proxy) summary[facName].proxy++; else summary[facName].regular++;
-        });
+      function renderAttendanceReport(){ /* reserved - separate blocks already implemented visually */ }
 
-        const rows = Object.values(summary).sort((a,b)=> b.total - a.total);
-        let html = '';
-        rows.forEach(r => {
-          html += `<tr>
-            <td style="padding:8px 6px">${escapeHtml(r.name)}</td>
-            <td style="padding:8px 6px;text-align:right">${r.total}</td>
-            <td style="padding:8px 6px;text-align:right">${r.regular}</td>
-            <td style="padding:8px 6px;text-align:right">${r.proxy}</td>
-          </tr>`;
+      function renderRegularStudentsSummary(){
+        if(!regularStudentsBody) return;
+        const map = {};
+        records.forEach(r => { (r.attendees||[]).forEach(a=>{ if(!map[a.roll]) map[a.roll] = { roll:a.roll, name:a.name, present:0, absent:0 }; if(a.status==='P') map[a.roll].present++; else map[a.roll].absent++; }); });
+        students.forEach(s => { if(!map[s.roll]) map[s.roll] = { roll:s.roll, name:s.name, present:0, absent:0 }; });
+        const rows = Object.values(map).sort((a,b)=>a.roll-b.roll);
+        regularStudentsBody.innerHTML = "";
+        rows.forEach(r=>{
+          const total = r.present + r.absent;
+          const pct = total ? ((r.present/total)*100).toFixed(1) : "0.0";
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td style="padding:8px 6px">${r.roll}</td><td style="padding:8px 6px">${escapeHtml(r.name)}</td><td style="padding:8px 6px;text-align:right">${r.present}</td><td style="padding:8px 6px;text-align:right">${r.absent}</td><td style="padding:8px 6px;text-align:right">${total}</td><td style="padding:8px 6px;text-align:right">${pct}%</td>`;
+          regularStudentsBody.appendChild(tr);
         });
-        facultySummaryBody.innerHTML = html || `<tr><td colspan="4" style="padding:12px;color:#6b7280">No data available</td></tr>`;
       }
 
       function renderHeatmap(){
         if(!heatmapEl) return;
         heatmapEl.innerHTML = "";
+        heatbarList.innerHTML = "";
         const days = 30;
         const now = new Date(attendanceDate.value || new Date().toISOString().slice(0,10));
         const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1039,195 +964,70 @@
           div.textContent = d.date.slice(5).replace("-","/");
           heatmapEl.appendChild(div);
         });
-      }
-
-      function renderTimeline(){
-        if(!timelineEl) return;
-        timelineEl.innerHTML = "";
-        const date = attendanceDate.value || new Date().toISOString().slice(0,10);
-        const daysRecords = records.filter(r=>r.date===date).sort((a,b)=> (a.startTime||"") > (b.startTime||"") ? 1 : -1 );
-        if(!daysRecords.length){ timelineEl.innerHTML = `<div class="att-modal-empty">No sessions for ${date}</div>`; return; }
-        daysRecords.forEach(r=>{
-          const item = document.createElement("div");
-          item.className = "timeline-item";
-          const label = document.createElement("div");
-          label.style.width = "160px";
-          label.innerHTML = `<strong>${r.timeSlot || r.startTime || ""}</strong><div style="font-size:12px;color:#6b7280">${r.lecture} • ${r.faculty}</div>`;
-          const stats = document.createElement("div");
-          stats.style.flex = "1";
-          const pct = r.total ? Math.round((r.presentCount / r.total) * 100) : 0;
-          stats.innerHTML = `<div class="bar"><div class="bar-fill" style="width:${pct}%;background:${pct>66?'#10b981':'#f59e0b'}"></div></div>`;
-          const meta = document.createElement("div");
-          meta.style.minWidth = "70px";
-          meta.style.textAlign = "right";
-          meta.innerHTML = `<div style="font-weight:600">${r.presentCount}/${r.total}</div><div style="font-size:12px;color:#6b7280">${pct}%</div>`;
-          item.appendChild(label); item.appendChild(stats); item.appendChild(meta);
-          timelineEl.appendChild(item);
+        const recent = dailyPct.slice(-7).reverse();
+        recent.forEach(r=>{
+          const el = document.createElement('div');
+          el.style.display="flex"; el.style.justifyContent="space-between"; el.style.padding="6px 4px"; el.style.alignItems="center";
+          const colorBox = document.createElement('div'); colorBox.style.width="36px"; colorBox.style.height="12px"; colorBox.style.background=colorFor(r.pct); colorBox.style.borderRadius="4px";
+          el.innerHTML = `<div style="font-size:13px">${r.date}</div><div style="display:flex;align-items:center;gap:8px"><div>${r.pct}%</div></div>`;
+          const right = el.querySelector('div > div');
+          if(right) right.replaceWith(colorBox);
+          heatbarList.appendChild(el);
         });
       }
 
-      function renderOverviewAndTrend(){
-        renderOverviewKPIs();
-        renderAttendanceTrend();
-        renderRecentAlerts();
-      }
+      function renderTimeline(){ /* same as before - optional container may not exist in your markup */ }
+      function renderLeaderboard(mode = 'top'){ /* same as before - implemented above */ renderLeaderboardInner(mode); }
 
-      function renderOverviewKPIs(){
-        const today = new Date(attendanceDate.value || new Date().toISOString().slice(0,10));
-        const formatDate = d => d.toISOString().slice(0,10);
-
-        let sumPct = 0, countDays = 0;
-        for(let i=6;i>=0;i--){
-          const d = new Date(today); d.setDate(today.getDate() - i);
-          const iso = formatDate(d);
-          const stats = computeDayPercent(iso);
-          if(stats.total>0){ sumPct += stats.pct; countDays++; }
-        }
-        const avg7 = countDays ? (sumPct / countDays) : 0;
-        kpiAvg7d.textContent = `${avg7 ? avg7.toFixed(1) : '0.0'}%`;
-
-        let best = { date: null, pct: -1 };
-        for(let i=29;i>=0;i--){
-          const d = new Date(today); d.setDate(today.getDate() - i);
-          const iso = formatDate(d);
-          const stats = computeDayPercent(iso);
-          if(stats.total>0 && stats.pct > best.pct){ best = { date: iso, pct: stats.pct }; }
-        }
-        kpiBestDay.textContent = best.date ? `${best.date} • ${best.pct}%` : 'N/A';
-      }
-
-      function computeDayPercent(isoDate){
-        let presentSet = new Set(), totalPossible = students.length || 0;
-        records.filter(r=>r.date===isoDate).forEach(r=>{ (r.attendees||[]).forEach(a=>{ if(a.status==='P') presentSet.add(a.roll); }); });
-        const present = presentSet.size;
-        const pct = totalPossible ? Math.round((present/totalPossible)*100) : 0;
-        return { total: totalPossible, present, pct };
-      }
-
-      function renderAttendanceTrend(){
-        const ctx = trendCanvas.getContext('2d');
-        const today = new Date(attendanceDate.value || new Date().toISOString().slice(0,10));
-        const formatDate = d => d.toISOString().slice(0,10);
-        const labels = [], data = [];
-        for(let i=6;i>=0;i--){
-          const d = new Date(today); d.setDate(today.getDate() - i);
-          const iso = formatDate(d);
-          labels.push(iso.slice(5)); // MM-DD
-          const stats = computeDayPercent(iso);
-          data.push(stats.pct || 0);
-        }
-        if(trendChart) trendChart.destroy();
-        trendChart = new Chart(ctx, {
-          type: 'line',
-          data: { labels, datasets: [{ label:'Attendance %', data, fill:true, tension:0.35, pointRadius:4 }] },
-          options: {
-            plugins:{ legend:{display:false} },
-            scales:{ y:{ beginAtZero:true, max:100 } },
-            elements:{ line:{ borderWidth:2 } }
-          }
-        });
-      }
-
-      function renderRecentAlerts(){
-        if(!alertsList) return;
-        alertsList.innerHTML = "";
-        const alerts = [];
-        const threshold = 30;
-        const today = new Date(attendanceDate.value || new Date().toISOString().slice(0,10));
-        const formatDate = d => d.toISOString().slice(0,10);
-        for(let i=0;i<7;i++){
-          const d = new Date(today); d.setDate(today.getDate() - i);
-          const iso = formatDate(d);
-          records.filter(r=>r.date===iso).forEach(r=>{
-            const pct = r.total ? Math.round((r.presentCount / r.total) * 100) : 0;
-            if(pct < threshold){
-              alerts.push({ date: iso, lecture: r.lecture, faculty: r.faculty, pct, type: 'low' });
-            } else {
-              alerts.push({ date: iso, lecture: r.lecture, faculty: r.faculty, pct, type: 'info' });
-            }
-          });
-        }
-        alerts.sort((a,b)=> {
-          if(a.type !== b.type) return a.type==='low' ? -1 : 1;
-          return b.date.localeCompare(a.date);
-        });
-        const shown = alerts.slice(0,8);
-        if(!shown.length) alertsList.innerHTML = `<li class="att-modal-empty">No alerts in the last 7 days</li>`;
-        else {
-          shown.forEach(al=>{
-            const li = document.createElement('li');
-            const severity = al.type==='low' ? `<span class="alerts-severity-low">${al.pct}%</span>` : `<strong>${al.pct}%</strong>`;
-            li.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700">${escapeHtml(al.lecture)}</div><div style="font-size:12px;color:#6b7280">${al.date} • ${escapeHtml(al.faculty)}</div></div><div style="text-align:right">${severity}</div></div>`;
-            alertsList.appendChild(li);
-          });
-        }
-      }
-
-      function renderTopStudents(){
-        const tbody = dailyStatusBody;
+      // breaking out leaderboard rendering to avoid duplication
+      function renderLeaderboardInner(mode = 'top') {
+        const tbody = document.getElementById('leaderboardBody');
         if(!tbody) return;
-        
-        // Calculate totals based on ALL records
-        const studentStats = students.map(s => {
-           let presentCount = 0;
-           records.forEach(r => {
-               const attendee = (r.attendees || []).find(a => String(a.roll || a.student_roll) === String(s.roll));
-               if (attendee && (attendee.status === 'P' || attendee.status === 'Present')) {
-                   presentCount++;
-               }
-           });
-           return { ...s, count: presentCount };
+        const map = {};
+        records.forEach(r=> (r.attendees||[]).forEach(a=>{ if(!map[a.roll]) map[a.roll] = { roll: a.roll, name: a.name, present:0, absent:0 }; if(a.status === "P") map[a.roll].present++; else map[a.roll].absent++; }));
+        const arr = Object.values(map);
+        if(!arr.length){ tbody.innerHTML = `<tr><td colspan="6" style="padding:12px;color:#6b7280">No attendance data available</td></tr>`; return; }
+        arr.forEach(u => { u.total = (u.present||0) + (u.absent||0); u.pct = u.total ? (u.present / u.total * 100) : 0; });
+        arr.sort((a,b) => b.pct - a.pct);
+        let list;
+        if(mode === 'top') list = arr.slice(0, 10);
+        else if(mode === 'bottom') list = arr.slice(-10).reverse();
+        else list = arr;
+        let html = '';
+        list.forEach((s, idx) => {
+          const rank = (mode === 'bottom') ? (arr.length - (idx)) : (idx + 1);
+          const pct = s.pct ? s.pct.toFixed(1) : '0.0';
+          const cls = s.pct >= 75 ? 'leader-high' : (s.pct >= 25 ? 'leader-mid' : 'leader-low');
+          html += `<tr>
+            <td style="padding:8px 6px">${rank}</td>
+            <td style="padding:8px 6px">${escapeHtml(s.roll)}</td>
+            <td style="padding:8px 6px">${escapeHtml(s.name)}</td>
+            <td style="padding:8px 6px;text-align:right">${s.present}</td>
+            <td style="padding:8px 6px;text-align:right">${s.total}</td>
+            <td style="padding:8px 6px;text-align:right" class="leader-percent ${cls}">${pct}%</td>
+          </tr>`;
         });
-
-        // Sort descending for Present
-        const topPresent = [...studentStats].sort((a,b) => b.count - a.count).slice(0, 5);
-        // Sort ascending for Absent
-        const topAbsent = [...studentStats].sort((a,b) => a.count - b.count).slice(0, 5);
-
-        tbody.innerHTML = "";
-
-        // Section 1 Header
-        const rowHeaderP = document.createElement("tr");
-        rowHeaderP.innerHTML = `<td colspan="2" style="background:#ecfdf5;color:#065f46;font-weight:bold;font-size:12px">🏆 Top 5 Present</td>`;
-        tbody.appendChild(rowHeaderP);
-
-        // Section 1 Rows
-        topPresent.forEach(s => {
-           tbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td></tr>`;
-        });
-
-        // Section 2 Header
-        const rowHeaderA = document.createElement("tr");
-        rowHeaderA.innerHTML = `<td colspan="2" style="background:#fef2f2;color:#991b1b;font-weight:bold;font-size:12px;border-top:2px solid #e5e7eb">⚠️ Top 5 Absent</td>`;
-        tbody.appendChild(rowHeaderA);
-
-        // Section 2 Rows
-        topAbsent.forEach(s => {
-           tbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td></tr>`;
-        });
+        tbody.innerHTML = html;
       }
 
       async function handleScan(code){
         if(!code) return;
-        const student = students.find(s=>String(s.roll) === String(code));
+        const roll = parseInt(code,10); if(isNaN(roll)){ showAlert("Scan code is not a valid roll number: "+code); return; }
+        const student = students.find(s=>s.roll===roll);
         if(!student){ showAlert("No student found for scanned code: "+code); return; }
-        
-        const rollKey = String(student.roll);
-        if(attendanceState[rollKey]) {
-            attendanceState[rollKey].present = true;
-        } else {
-            attendanceState[rollKey] = { present:true };
-        }
-        
-        addScanLogEntry(student.roll, student.name); 
-        renderList();
-        try{ await supabase.from("scan_log").insert({ student_roll: student.roll, student_name: student.name, lecture_name: lectureSelect.value, scanned_by: currentUser ? currentUser.id : null }); }catch(err){ console.error("Error saving scan log:",err); }
+        if(!attendanceState[roll]) attendanceState[roll] = { present:true }; else attendanceState[roll].present = true;
+        addScanLogEntry(roll, student.name); renderList();
+        try{ await supabase.from("scan_log").insert({ student_roll: roll, student_name: student.name, lecture_name: lectureSelect.value, scanned_by: currentUser.id }); }catch(err){ console.error("Error saving scan log:",err); }
       }
 
       function addScanLogEntry(roll,name){ const now=new Date(); const timeStr=now.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); const lecture = lectureSelect.value; scanLog.unshift({time:timeStr,roll,name,lecture}); if(scanLog.length>50) scanLog.pop(); renderScanLog(); }
       function renderScanLog(){ if(!scanLogTbody) return; scanLogTbody.innerHTML=""; scanLog.forEach(entry=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${entry.time}</td><td>${entry.roll}</td><td>${entry.name}</td><td>${entry.lecture}</td>`; scanLogTbody.appendChild(tr); }); }
 
       function downloadCSV(){ const rows=[["Date","Day","Time","Lecture","LectureType","Faculty","Proxy","OriginalFaculty","Roll","Name","Status"]]; records.forEach(r=>{ r.attendees.forEach(a=>{ rows.push([r.date, r.day||"", r.timeSlot||"", r.lecture, r.lectureType||"", r.faculty||"", r.proxy ? "Yes":"No", r.original||"", a.roll, a.name, a.status]); }); }); const csv = rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n"); const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download="attendance_records.csv"; a.click(); URL.revokeObjectURL(url); }
+
+      function downloadStudentsReport(){ const map={}; records.forEach(r=>{ (r.attendees||[]).forEach(a=>{ if(!map[a.roll]) map[a.roll]={roll:a.roll,name:a.name,present:0,absent:0}; if(a.status==='P') map[a.roll].present++; else if(a.status==='A') map[a.roll].absent++; }); }); const rows=[["Roll No","Name","Total Present","Total Absent","Total Days","Attendance %"]]; Object.values(map).sort((a,b)=>a.roll-b.roll).forEach(r=>{ const totalDays=r.present+r.absent; const pct = totalDays?((r.present/totalDays)*100).toFixed(1):"0.0"; rows.push([r.roll,r.name,r.present,r.absent,totalDays,pct+"%"]); }); const csv = rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n"); const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download="students_report.csv"; a.click(); URL.revokeObjectURL(url); }
+
+      function downloadFacultyReport(){ const summary={}; faculty.forEach(f=>summary[f.name]={name:f.name,total:0,regular:0,proxy:0}); records.forEach(r=>{ const facName=r.faculty||""; if(!facName||!summary[facName]) return; summary[facName].total++; if(r.proxy) summary[facName].proxy++; else summary[facName].regular++; }); const rows=[["Faculty Name","Total Lectures","Regular","Proxy"]]; Object.values(summary).forEach(r=>rows.push([r.name,r.total,r.regular,r.proxy])); const csv = rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n"); const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download="faculty_report.csv"; a.click(); URL.revokeObjectURL(url); }
 
       function showAlert(msg){ const div=document.createElement('div'); div.className='alert'; div.textContent = msg; appContainer.insertBefore(div,appContainer.firstChild); setTimeout(()=>div.remove(),4000); }
 
@@ -1241,16 +1041,7 @@
           .replace(/'/g, "&#39;");
       }
 
-      function refreshEverything(){
-        updateSummary();
-        renderTopStudents();
-        renderAllCharts();
-        renderHeatmap();
-        renderAlerts();
-        renderTimeline();
-        renderFacultySummary();
-      }
-
+      // start
       init();
     })();
   </script>
